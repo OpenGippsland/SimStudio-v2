@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+.date-closed {
+  background-color: #f1f1f1;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.7;
+  text-decoration: line-through;
+}

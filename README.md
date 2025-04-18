@@ -48,6 +48,17 @@ npm start
 
 This project is configured for automatic deployment from GitHub to Vercel. When you push changes to your GitHub repository, Vercel will automatically deploy the updated application.
 
+The project includes a `vercel.json` configuration file that specifies the correct build settings for Next.js deployment on Vercel:
+
+```json
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
+}
+```
+
 ### Important Notes
 
 - The SQLite database file (`bookings.db`) is still included in the repository for local development and testing purposes.

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import db from '../../lib/db'
+import { supabase } from '../../lib/supabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,19 +15,35 @@ export default async function handler(
       }
       
       // Check if user exists
-      const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId)
-      if (!user) {
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', typeof userId === 'string' ? parseInt(userId, 10) : parseInt(userId[0], 10))
+        .single();
+      
+      if (userError || !user) {
         return res.status(404).json({ error: 'User not found' })
       }
       
       // Get user credits
-      const credits = db.prepare(`
-        SELECT user_id, simulator_hours, coaching_sessions 
-        FROM credits 
-        WHERE user_id = ?
-      `).get(userId) || { user_id: userId, simulator_hours: 0, coaching_sessions: 0 }
+      const { data: credits, error: creditsError } = await supabase
+        .from('credits')
+        .select('user_id, simulator_hours, coaching_sessions')
+        .eq('user_id', user.id)
+        .single();
       
-      return res.status(200).json(credits)
+      if (creditsError && creditsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw creditsError;
+      }
+      
+      // If no credits record exists, return default values
+      const creditsData = credits || { 
+        user_id: user.id, 
+        simulator_hours: 0, 
+        coaching_sessions: 0 
+      };
+      
+      return res.status(200).json(creditsData)
     }
     
     // POST - Add credits to a user (e.g., when purchasing a package)
@@ -39,8 +55,13 @@ export default async function handler(
       }
       
       // Check if user exists
-      const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId)
-      if (!user) {
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      if (userError || !user) {
         return res.status(404).json({ error: 'User not found' })
       }
       
@@ -49,13 +70,14 @@ export default async function handler(
       // If packageId is provided, get hours from package
       if (packageId) {
         // Check if package exists
-        interface Package {
-          id: number;
-          hours: number;
-        }
+        const { data: package_, error: packageError } = await supabase
+          .from('packages')
+          .select('id, hours')
+          .eq('id', packageId)
+          .eq('is_active', true)
+          .single();
         
-        const package_ = db.prepare('SELECT id, hours FROM packages WHERE id = ? AND is_active = 1').get(packageId) as Package | undefined
-        if (!package_) {
+        if (packageError || !package_) {
           return res.status(404).json({ error: 'Package not found or inactive' })
         }
         
@@ -72,46 +94,51 @@ export default async function handler(
         return res.status(400).json({ error: 'Either Package ID or Hours are required' })
       }
       
-      // Begin transaction
-      db.prepare('BEGIN TRANSACTION').run()
+      // Get current credits
+      const { data: currentCredits, error: creditsError } = await supabase
+        .from('credits')
+        .select('simulator_hours')
+        .eq('user_id', userId)
+        .single();
       
-      try {
-        // Get current credits
-        const currentCredits = db.prepare('SELECT simulator_hours FROM credits WHERE user_id = ?').get(userId)
+      if (currentCredits) {
+        // Update existing credits
+        const { data: updatedCredits, error: updateError } = await supabase
+          .from('credits')
+          .update({ 
+            simulator_hours: currentCredits.simulator_hours + creditsToAdd 
+          })
+          .eq('user_id', userId)
+          .select()
+          .single();
         
-        if (currentCredits) {
-          // Update existing credits
-          db.prepare(`
-            UPDATE credits 
-            SET simulator_hours = simulator_hours + ? 
-            WHERE user_id = ?
-          `).run(creditsToAdd, userId)
-        } else {
-          // Insert new credits record
-          db.prepare(`
-            INSERT INTO credits (user_id, simulator_hours) 
-            VALUES (?, ?)
-          `).run(userId, creditsToAdd)
+        if (updateError) {
+          throw updateError;
         }
-        
-        // Commit transaction
-        db.prepare('COMMIT').run()
-        
-        // Get updated credits
-        const updatedCredits = db.prepare(`
-          SELECT user_id, simulator_hours, coaching_sessions 
-          FROM credits 
-          WHERE user_id = ?
-        `).get(userId)
         
         return res.status(200).json({
           message: 'Credits added successfully',
           credits: updatedCredits
-        })
-      } catch (error) {
-        // Rollback transaction on error
-        db.prepare('ROLLBACK').run()
-        throw error
+        });
+      } else {
+        // Insert new credits record
+        const { data: newCredits, error: insertError } = await supabase
+          .from('credits')
+          .insert({ 
+            user_id: userId, 
+            simulator_hours: creditsToAdd 
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          throw insertError;
+        }
+        
+        return res.status(200).json({
+          message: 'Credits added successfully',
+          credits: newCredits
+        });
       }
     }
     
@@ -129,73 +156,73 @@ export default async function handler(
       }
       
       // Check if user exists
-      const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId)
-      if (!user) {
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', typeof userId === 'string' ? parseInt(userId, 10) : parseInt(userId[0], 10))
+        .single();
+      
+      if (userError || !user) {
         return res.status(404).json({ error: 'User not found' })
       }
       
-      // Begin transaction
-      db.prepare('BEGIN TRANSACTION').run()
+      // Build update object
+      const updateData: { simulator_hours?: number, coaching_sessions?: number } = {};
       
-      try {
-        // Check if credits record exists
-        const existingCredits = db.prepare('SELECT user_id FROM credits WHERE user_id = ?').get(userId)
+      if (simulator_hours !== undefined) {
+        updateData.simulator_hours = simulator_hours;
+      }
+      
+      if (coaching_sessions !== undefined) {
+        updateData.coaching_sessions = coaching_sessions;
+      }
+      
+      // Check if credits record exists
+      const { data: existingCredits, error: checkError } = await supabase
+        .from('credits')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      let updatedCredits;
+      
+      if (existingCredits) {
+        // Update existing credits
+        const { data, error: updateError } = await supabase
+          .from('credits')
+          .update(updateData)
+          .eq('user_id', user.id)
+          .select()
+          .single();
         
-        if (existingCredits) {
-          // Build update query based on provided fields
-          let updateFields = []
-          let params = []
-          
-          if (simulator_hours !== undefined) {
-            updateFields.push('simulator_hours = ?')
-            params.push(simulator_hours)
-          }
-          
-          if (coaching_sessions !== undefined) {
-            updateFields.push('coaching_sessions = ?')
-            params.push(coaching_sessions)
-          }
-          
-          // Add userId to params
-          params.push(userId)
-          
-          // Update existing credits
-          db.prepare(`
-            UPDATE credits 
-            SET ${updateFields.join(', ')} 
-            WHERE user_id = ?
-          `).run(...params)
-        } else {
-          // Insert new credits record
-          db.prepare(`
-            INSERT INTO credits (user_id, simulator_hours, coaching_sessions) 
-            VALUES (?, ?, ?)
-          `).run(
-            userId, 
-            simulator_hours !== undefined ? simulator_hours : 0,
-            coaching_sessions !== undefined ? coaching_sessions : 0
-          )
+        if (updateError) {
+          throw updateError;
         }
         
-        // Commit transaction
-        db.prepare('COMMIT').run()
+        updatedCredits = data;
+      } else {
+        // Insert new credits record
+        const { data, error: insertError } = await supabase
+          .from('credits')
+          .insert({ 
+            user_id: user.id, 
+            simulator_hours: simulator_hours !== undefined ? simulator_hours : 0,
+            coaching_sessions: coaching_sessions !== undefined ? coaching_sessions : 0
+          })
+          .select()
+          .single();
         
-        // Get updated credits
-        const updatedCredits = db.prepare(`
-          SELECT user_id, simulator_hours, coaching_sessions 
-          FROM credits 
-          WHERE user_id = ?
-        `).get(userId)
+        if (insertError) {
+          throw insertError;
+        }
         
-        return res.status(200).json({
-          message: 'Credits updated successfully',
-          credits: updatedCredits
-        })
-      } catch (error) {
-        // Rollback transaction on error
-        db.prepare('ROLLBACK').run()
-        throw error
+        updatedCredits = data;
       }
+      
+      return res.status(200).json({
+        message: 'Credits updated successfully',
+        credits: updatedCredits
+      });
     }
     
     else {

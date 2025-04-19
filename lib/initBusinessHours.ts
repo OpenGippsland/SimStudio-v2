@@ -1,47 +1,52 @@
-import db from './db';
+import { supabase } from './supabase';
 
 // Initialize business hours with default values (8am-6pm, Monday-Friday)
-export function initBusinessHours() {
+export async function initBusinessHours() {
   console.log('Initializing business hours...');
   
   // Check if business hours are already initialized
-  const existingHours = db.prepare('SELECT COUNT(*) as count FROM business_hours').get() as { count: number };
+  const { count, error } = await supabase
+    .from('business_hours')
+    .select('*', { count: 'exact', head: true });
   
-  if (existingHours.count > 0) {
+  if (error) {
+    console.error('Error checking business hours:', error);
+    return;
+  }
+  
+  if (count && count > 0) {
     console.log('Business hours already initialized');
     return;
   }
   
   // Default business hours: Monday-Friday 8am-6pm, closed on weekends
   const defaultHours = [
-    { dayOfWeek: 0, openHour: 8, closeHour: 18, isClosed: 1 }, // Sunday - Closed
-    { dayOfWeek: 1, openHour: 8, closeHour: 18, isClosed: 0 }, // Monday
-    { dayOfWeek: 2, openHour: 8, closeHour: 18, isClosed: 0 }, // Tuesday
-    { dayOfWeek: 3, openHour: 8, closeHour: 18, isClosed: 0 }, // Wednesday
-    { dayOfWeek: 4, openHour: 8, closeHour: 18, isClosed: 0 }, // Thursday
-    { dayOfWeek: 5, openHour: 8, closeHour: 18, isClosed: 0 }, // Friday
-    { dayOfWeek: 6, openHour: 8, closeHour: 18, isClosed: 1 }, // Saturday - Closed
+    { day_of_week: 0, open_hour: 8, close_hour: 18, is_closed: true }, // Sunday - Closed
+    { day_of_week: 1, open_hour: 8, close_hour: 18, is_closed: false }, // Monday
+    { day_of_week: 2, open_hour: 8, close_hour: 18, is_closed: false }, // Tuesday
+    { day_of_week: 3, open_hour: 8, close_hour: 18, is_closed: false }, // Wednesday
+    { day_of_week: 4, open_hour: 8, close_hour: 18, is_closed: false }, // Thursday
+    { day_of_week: 5, open_hour: 8, close_hour: 18, is_closed: false }, // Friday
+    { day_of_week: 6, open_hour: 8, close_hour: 18, is_closed: true }, // Saturday - Closed
   ];
   
-  const stmt = db.prepare(`
-    INSERT INTO business_hours (day_of_week, open_hour, close_hour, is_closed)
-    VALUES (?, ?, ?, ?)
-  `);
-  
   // Insert default business hours
-  const insertMany = db.transaction((hours) => {
-    for (const hour of hours) {
-      stmt.run(hour.dayOfWeek, hour.openHour, hour.closeHour, hour.isClosed);
-    }
-  });
+  const { error: insertError } = await supabase
+    .from('business_hours')
+    .insert(defaultHours);
   
-  insertMany(defaultHours);
+  if (insertError) {
+    console.error('Error initializing business hours:', insertError);
+    return;
+  }
+  
   console.log('Business hours initialized successfully');
 }
 
 // Run this function if this file is executed directly
 if (require.main === module) {
-  initBusinessHours();
+  initBusinessHours()
+    .catch(err => console.error('Error initializing business hours:', err));
 }
 
 export default initBusinessHours;

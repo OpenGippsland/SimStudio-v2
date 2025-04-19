@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import db from '../../lib/db'
+import { supabase } from '../../lib/supabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,14 +14,28 @@ export default async function handler(
         return res.status(400).json({ error: 'Missing required fields' })
       }
       
-      // Check if user has enough credits
+      // Check if user exists and has enough credits
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      if (userError || !user) {
+        return res.status(400).json({ error: 'User does not exist' })
+      }
+      
+      // Calculate booking hours
       const bookingHours = Math.ceil((new Date(endTime).getTime() - new Date(startTime).getTime()) / (60 * 60 * 1000))
       
-      const userCredits = db.prepare(`
-        SELECT simulator_hours FROM credits WHERE user_id = ?
-      `).get(Number(userId)) as { simulator_hours: number } | undefined
+      // Get user credits
+      const { data: credits, error: creditsError } = await supabase
+        .from('credits')
+        .select('simulator_hours')
+        .eq('user_id', userId)
+        .single();
       
-      const availableCredits = userCredits?.simulator_hours || 0
+      const availableCredits = credits?.simulator_hours || 0
       
       if (availableCredits < bookingHours) {
         return res.status(400).json({ 
@@ -49,28 +63,17 @@ export default async function handler(
       const endHour = endDate.getHours();
       const endMinute = endDate.getMinutes();
       
-      // Define types for database results
-      interface BusinessHours {
-        open_hour: number;
-        close_hour: number;
-        is_closed: number; // SQLite stores booleans as 0/1
-      }
-      
-      interface SpecialDate {
-        is_closed: number;
-        open_hour: number | null;
-        close_hour: number | null;
-      }
-      
       // Get business hours for the day of week
-      const businessHours = db.prepare(
-        'SELECT open_hour, close_hour, is_closed FROM business_hours WHERE day_of_week = ?'
-      ).get(dayOfWeek) as BusinessHours | undefined;
+      const { data: businessHours, error: businessHoursError } = await supabase
+        .from('business_hours')
+        .select('open_hour, close_hour, is_closed')
+        .eq('day_of_week', dayOfWeek)
+        .single();
       
       // Default hours if not configured
       const openHour = businessHours?.open_hour ?? 8;
       const closeHour = businessHours?.close_hour ?? 18;
-      const isClosed = businessHours?.is_closed ? true : false;
+      const isClosed = businessHours?.is_closed || false;
       
       if (isClosed) {
         return res.status(400).json({ error: 'Bookings not available on this day' });
@@ -89,9 +92,11 @@ export default async function handler(
       const bookingDate = startDate.toISOString().split('T')[0];
       
       // Check if it's a special date
-      const specialDate = db.prepare(
-        'SELECT is_closed, open_hour, close_hour FROM special_dates WHERE date = ?'
-      ).get(bookingDate) as SpecialDate | undefined;
+      const { data: specialDate, error: specialDateError } = await supabase
+        .from('special_dates')
+        .select('is_closed, open_hour, close_hour')
+        .eq('date', bookingDate)
+        .single();
       
       if (specialDate?.is_closed) {
         return res.status(400).json({ 
@@ -132,84 +137,48 @@ export default async function handler(
         });
       }
 
-      const stmt = db.prepare(`
-        INSERT INTO bookings (user_id, simulator_id, start_time, end_time, coach)
-        VALUES (?, ?, ?, ?, ?)
-      `)
-      
-      // Verify user exists first
-      const userCheck = db.prepare('SELECT id FROM users WHERE id = ?').get(Number(userId))
-      if (!userCheck) {
-        return res.status(400).json({ error: 'User does not exist' })
-      }
-
       // Check coach availability if specific coach is selected
       if (coach && coach !== 'none' && coach !== 'any') {
-        const dayOfWeek = startDate.getDay();
-        const startHour = startDate.getHours();
-        const endHour = endDate.getHours();
-        
         // Check if any availability block covers the requested time
-        const isAvailable = db.prepare(`
-          SELECT 1 FROM coach_availability 
-          WHERE coach_id = ? 
-          AND day_of_week = ?
-          AND (
-            (start_hour <= ? AND end_hour >= ?) OR  /* Fully contains */
-            (start_hour >= ? AND end_hour <= ?) OR  /* Fully within */
-            (start_hour <= ? AND end_hour >= ?)     /* Overlaps start */
-          )
-        `).get(
-          coach, 
-          dayOfWeek,
-          startHour, endHour,  /* Fully contains */
-          startHour, endHour,  /* Fully within */
-          startHour, startHour /* Overlaps start */
-        );
+        const { data: coachAvailability, error: coachAvailabilityError } = await supabase
+          .from('coach_availability')
+          .select('id')
+          .eq('coach_id', coach)
+          .eq('day_of_week', dayOfWeek)
+          .or(`start_hour.lte.${startHour},end_hour.gte.${endHour}`)
+          .or(`start_hour.gte.${startHour},end_hour.lte.${endHour}`)
+          .or(`start_hour.lte.${startHour},end_hour.gte.${startHour}`);
         
-        if (!isAvailable) {
+        if (!coachAvailability || coachAvailability.length === 0) {
           return res.status(400).json({ error: 'Coach not available at selected time' });
         }
 
         // Check for existing bookings with this coach
-        const existingCoachBooking = db.prepare(`
-          SELECT 1 FROM bookings 
-          WHERE coach = ? 
-          AND ((start_time < ? AND end_time > ?) 
-          OR (start_time < ? AND end_time > ?) 
-          OR (start_time >= ? AND end_time <= ?))
-        `).get(
-          coach,
-          endDate.toISOString(),
-          startDate.toISOString(),
-          startDate.toISOString(),
-          endDate.toISOString(),
-          startDate.toISOString(),
-          endDate.toISOString()
-        );
+        const { data: existingCoachBooking, error: existingCoachBookingError } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('coach', coach)
+          .or(`and(start_time.lt.${endDate.toISOString()},end_time.gt.${startDate.toISOString()})`)
+          .or(`and(start_time.lt.${startDate.toISOString()},end_time.gt.${endDate.toISOString()})`)
+          .or(`and(start_time.gte.${startDate.toISOString()},end_time.lte.${endDate.toISOString()})`);
         
-        if (existingCoachBooking) {
+        if (existingCoachBooking && existingCoachBooking.length > 0) {
           return res.status(400).json({ error: 'Coach already booked at this time' });
         }
       }
 
       // Find first available simulator (1-4)
+      const { data: bookedSimulators, error: bookedSimulatorsError } = await supabase
+        .from('bookings')
+        .select('simulator_id')
+        .or(`and(start_time.lt.${endDate.toISOString()},end_time.gt.${startDate.toISOString()})`)
+        .or(`and(start_time.lt.${startDate.toISOString()},end_time.gt.${endDate.toISOString()})`)
+        .or(`and(start_time.gte.${startDate.toISOString()},end_time.lte.${endDate.toISOString()})`);
+      
+      const bookedSimulatorIds = bookedSimulators?.map(b => b.simulator_id) || [];
+      
       let availableSimulator = 1;
-      const bookedSimulators = db.prepare(`
-        SELECT simulator_id FROM bookings
-        WHERE ((start_time < ? AND end_time > ?) 
-        OR (start_time < ? AND end_time > ?) 
-        OR (start_time >= ? AND end_time <= ?))
-      `).all(
-        endDate.toISOString(),
-        startDate.toISOString(),
-        startDate.toISOString(),
-        endDate.toISOString(),
-        startDate.toISOString(),
-        endDate.toISOString()
-      ).map((b: any) => b.simulator_id);
-
-      while (bookedSimulators.includes(availableSimulator) && availableSimulator <= 4) {
+      while (bookedSimulatorIds.includes(availableSimulator) && availableSimulator <= 4) {
         availableSimulator++;
       }
 
@@ -217,61 +186,101 @@ export default async function handler(
         return res.status(400).json({ error: 'No available simulators for selected time' });
       }
 
-      // Begin transaction
-      db.prepare('BEGIN TRANSACTION').run()
+      // Create booking and update credits in a transaction
+      // Note: Supabase doesn't support true transactions, but we can handle this with error checking
       
-      try {
-        // Convert data types for SQLite
-        const result = stmt.run(
-          Number(userId),
-          Number(simulatorId),
-          new Date(startTime).toISOString(),
-          new Date(endTime).toISOString(),
-          coach || 'none'
-        )
-        
-        // Deduct credits from user
-        db.prepare(`
-          UPDATE credits 
-          SET simulator_hours = simulator_hours - ? 
-          WHERE user_id = ?
-        `).run(bookingHours, Number(userId))
-        
-        // Commit transaction
-        db.prepare('COMMIT').run()
-        
-        // Get updated credits
-        const updatedCredits = db.prepare(`
-          SELECT simulator_hours FROM credits WHERE user_id = ?
-        `).get(Number(userId)) as { simulator_hours: number } | undefined
-        
-        return res.status(201).json({ 
-          id: result.lastInsertRowid,
-          creditsRemaining: updatedCredits?.simulator_hours || 0
+      // Create booking
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          user_id: userId,
+          simulator_id: simulatorId || availableSimulator,
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          coach: coach || 'none',
+          status: 'confirmed',
+          updated_at: new Date().toISOString()
         })
-      } catch (error) {
-        // Rollback transaction on error
-        db.prepare('ROLLBACK').run()
-        throw error
+        .select()
+        .single();
+      
+      if (bookingError) {
+        throw bookingError;
       }
+      
+      // Update user credits
+      const { data: updatedCredits, error: updateCreditsError } = await supabase
+        .from('credits')
+        .update({ 
+          simulator_hours: availableCredits - bookingHours 
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+      
+      if (updateCreditsError) {
+        // If updating credits fails, delete the booking to maintain consistency
+        await supabase
+          .from('bookings')
+          .delete()
+          .eq('id', booking.id);
+        
+        throw updateCreditsError;
+      }
+      
+      return res.status(201).json({ 
+        id: booking.id,
+        creditsRemaining: updatedCredits.simulator_hours
+      });
     } 
     else if (req.method === 'GET') {
-      const bookings = db.prepare('SELECT * FROM bookings').all()
-      return res.status(200).json(bookings)
+      // Get query parameters
+      const { userId } = req.query;
+      
+      let query = supabase
+        .from('bookings')
+        .select(`
+          id,
+          user_id,
+          simulator_id,
+          start_time,
+          end_time,
+          coach,
+          status,
+          updated_at,
+          cancellation_reason,
+          booking_type,
+          users (
+            email
+          )
+        `);
+      
+      // Filter by user if userId is provided
+      if (userId) {
+        query = query.eq('user_id', typeof userId === 'string' ? parseInt(userId, 10) : parseInt(userId[0], 10));
+      }
+      
+      const { data: bookings, error } = await query.order('start_time', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return res.status(200).json(bookings || []);
     }
     else {
       res.setHeader('Allow', ['GET', 'POST'])
       return res.status(405).end(`Method ${req.method} Not Allowed`)
     }
-    } catch (error) {
-      console.error('Booking API error:', error)
-      if (error instanceof Error) {
-        return res.status(500).json({ 
-          error: 'Internal server error',
-          message: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        })
-      }
-      return res.status(500).json({ error: 'Internal server error' })
+  } catch (error) {
+    console.error('Booking API error:', error)
+    if (error instanceof Error) {
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      })
+    }
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }

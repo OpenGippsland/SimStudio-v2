@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import db from '../../lib/db'
+import { supabase } from '../../lib/supabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,17 +23,48 @@ export default async function handler(
         return res.status(400).json({ error: 'Open hour must be before close hour' })
       }
 
-      const stmt = db.prepare(`
-        INSERT INTO business_hours (day_of_week, open_hour, close_hour, is_closed)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(day_of_week) DO UPDATE SET
-        open_hour = excluded.open_hour,
-        close_hour = excluded.close_hour,
-        is_closed = excluded.is_closed
-      `)
-
-      const result = stmt.run(dayOfWeek, openHour, closeHour, isClosed ? 1 : 0)
-      return res.status(201).json({ id: result.lastInsertRowid })
+      // Check if record exists for this day
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('business_hours')
+        .select('id')
+        .eq('day_of_week', dayOfWeek)
+        .single();
+      
+      let result;
+      
+      if (existingRecord) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('business_hours')
+          .update({
+            open_hour: openHour,
+            close_hour: closeHour,
+            is_closed: isClosed || false
+          })
+          .eq('day_of_week', dayOfWeek)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('business_hours')
+          .insert({
+            day_of_week: dayOfWeek,
+            open_hour: openHour,
+            close_hour: closeHour,
+            is_closed: isClosed || false
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+      
+      return res.status(201).json({ id: result.id })
     }
     else if (req.method === 'GET') {
       const { dayOfWeek } = req.query
@@ -41,14 +72,23 @@ export default async function handler(
       let businessHours;
       if (dayOfWeek !== undefined) {
         // Get specific day
-        businessHours = db.prepare(`
-          SELECT * FROM business_hours WHERE day_of_week = ?
-        `).get(Number(dayOfWeek))
+        const { data, error } = await supabase
+          .from('business_hours')
+          .select('*')
+          .eq('day_of_week', typeof dayOfWeek === 'string' ? parseInt(dayOfWeek, 10) : parseInt(dayOfWeek[0], 10))
+          .single();
+        
+        if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
+        businessHours = data || null;
       } else {
         // Get all days
-        businessHours = db.prepare(`
-          SELECT * FROM business_hours ORDER BY day_of_week
-        `).all()
+        const { data, error } = await supabase
+          .from('business_hours')
+          .select('*')
+          .order('day_of_week');
+        
+        if (error) throw error;
+        businessHours = data || [];
       }
       
       return res.status(200).json(businessHours || [])

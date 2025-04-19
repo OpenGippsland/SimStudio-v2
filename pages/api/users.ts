@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import db from '../../lib/db'
+import { supabase } from '../../lib/supabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,64 +14,61 @@ export default async function handler(
           return res.status(400).json({ error: 'Email query parameter must be a string' })
         }
 
-        // Check if first_name column exists in users table
-        interface TableColumn {
-          name: string;
-          [key: string]: any;
+        // Get user with credits
+        const { data: users, error } = await supabase
+          .from('users')
+          .select(`
+            id, 
+            email, 
+            credits (
+              simulator_hours
+            )
+          `)
+          .eq('email', email)
+          .limit(1);
+        
+        if (error) {
+          throw error;
         }
         
-        const tableInfo = db.prepare("PRAGMA table_info(users)").all() as TableColumn[];
-        const hasFirstName = tableInfo.some(column => column.name === 'first_name');
-        
-        let user;
-        if (hasFirstName) {
-          user = db.prepare(`
-            SELECT u.id, u.email, u.first_name, COALESCE(c.simulator_hours, 0) as simulator_hours 
-            FROM users u
-            LEFT JOIN credits c ON u.id = c.user_id
-            WHERE u.email = ?
-          `).get(email) as { id: number, email: string, first_name: string, simulator_hours: number } | undefined
-        } else {
-          user = db.prepare(`
-            SELECT u.id, u.email, COALESCE(c.simulator_hours, 0) as simulator_hours 
-            FROM users u
-            LEFT JOIN credits c ON u.id = c.user_id
-            WHERE u.email = ?
-          `).get(email) as { id: number, email: string, simulator_hours: number } | undefined
-        }
-        
-        if (!user) {
+        if (!users || users.length === 0) {
           return res.status(404).json({ error: 'User not found' })
         }
-        return res.status(200).json([user])
+        
+        // Format the response to match the expected structure
+        const formattedUsers = users.map(user => ({
+          id: user.id,
+          email: user.email,
+          simulator_hours: user.credits?.simulator_hours || 0
+        }));
+        
+        return res.status(200).json(formattedUsers)
       } 
       // Otherwise, get all users
       else {
-        // Check if first_name column exists in users table
-        interface TableColumn {
-          name: string;
-          [key: string]: any;
+        // Get all users with credits
+        const { data: users, error } = await supabase
+          .from('users')
+          .select(`
+            id, 
+            email, 
+            credits (
+              simulator_hours
+            )
+          `);
+        
+        if (error) {
+          throw error;
         }
         
-        const tableInfo = db.prepare("PRAGMA table_info(users)").all() as TableColumn[];
-        const hasFirstName = tableInfo.some(column => column.name === 'first_name');
+        // Format the response to match the expected structure
+        const formattedUsers = users.map(user => ({
+          id: user.id,
+          email: user.email,
+          simulator_hours: user.credits?.simulator_hours || 0
+        }));
         
-        let users;
-        if (hasFirstName) {
-          users = db.prepare(`
-            SELECT u.id, u.email, u.first_name, COALESCE(c.simulator_hours, 0) as simulator_hours 
-            FROM users u
-            LEFT JOIN credits c ON u.id = c.user_id
-          `).all() as { id: number, email: string, first_name: string, simulator_hours: number }[]
-        } else {
-          users = db.prepare(`
-            SELECT u.id, u.email, COALESCE(c.simulator_hours, 0) as simulator_hours 
-            FROM users u
-            LEFT JOIN credits c ON u.id = c.user_id
-          `).all() as { id: number, email: string, simulator_hours: number }[]
-        }
-        
-        return res.status(200).json(users)
+        return res.status(200).json(formattedUsers)
       }
     }
     else if (req.method === 'POST') {
@@ -81,26 +78,32 @@ export default async function handler(
       }
 
       // Check if user exists first
-      const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email) as { id: number } | undefined
-      if (existingUser?.id) {
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .limit(1)
+        .single();
+      
+      if (existingUser) {
         return res.status(200).json({ id: existingUser.id, message: 'User already exists' })
       }
 
-      // Check if we have first_name column in users table
-      try {
-        // Try to insert with first_name
-        const stmt = db.prepare('INSERT INTO users (email, first_name) VALUES (?, ?)')
-        const result = stmt.run(email, firstName || null)
-        return res.status(201).json({ id: result.lastInsertRowid })
-      } catch (error) {
-        // If error occurs (likely because first_name column doesn't exist), fall back to original method
-        const stmt = db.prepare('INSERT INTO users (email) VALUES (?)')
-        const result = stmt.run(email)
-        return res.status(201).json({ id: result.lastInsertRowid })
+      // Insert new user
+      const { data, error } = await supabase
+        .from('users')
+        .insert({ email })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
       }
+      
+      return res.status(201).json({ id: data.id })
     }
     else {
-      res.setHeader('Allow', ['POST'])
+      res.setHeader('Allow', ['GET', 'POST'])
       return res.status(405).end(`Method ${req.method} Not Allowed`)
     }
   } catch (error) {

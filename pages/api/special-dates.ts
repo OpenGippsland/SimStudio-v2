@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import db from '../../lib/db'
+import { supabase } from '../../lib/supabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -43,24 +43,50 @@ export default async function handler(
         }
       }
 
-      const stmt = db.prepare(`
-        INSERT INTO special_dates (date, is_closed, open_hour, close_hour, description)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(date) DO UPDATE SET
-        is_closed = excluded.is_closed,
-        open_hour = excluded.open_hour,
-        close_hour = excluded.close_hour,
-        description = excluded.description
-      `)
-
-      const result = stmt.run(
-        date,
-        isClosed ? 1 : 0,
-        openHour !== undefined ? openHour : null,
-        closeHour !== undefined ? closeHour : null,
-        description || null
-      )
-      return res.status(201).json({ id: result.lastInsertRowid })
+      // Check if record exists for this date
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('special_dates')
+        .select('id')
+        .eq('date', date)
+        .single();
+      
+      let result;
+      
+      if (existingRecord) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('special_dates')
+          .update({
+            is_closed: isClosed || false,
+            open_hour: openHour !== undefined ? openHour : null,
+            close_hour: closeHour !== undefined ? closeHour : null,
+            description: description || null
+          })
+          .eq('date', date)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('special_dates')
+          .insert({
+            date,
+            is_closed: isClosed || false,
+            open_hour: openHour !== undefined ? openHour : null,
+            close_hour: closeHour !== undefined ? closeHour : null,
+            description: description || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+      
+      return res.status(201).json({ id: result.id })
     }
     else if (req.method === 'GET') {
       const { date, from, to } = req.query
@@ -68,21 +94,34 @@ export default async function handler(
       let specialDates;
       if (date) {
         // Get specific date
-        specialDates = db.prepare(`
-          SELECT * FROM special_dates WHERE date = ?
-        `).get(date)
+        const { data, error } = await supabase
+          .from('special_dates')
+          .select('*')
+          .eq('date', date)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
+        specialDates = data || null;
       } else if (from && to) {
         // Get date range
-        specialDates = db.prepare(`
-          SELECT * FROM special_dates 
-          WHERE date >= ? AND date <= ?
-          ORDER BY date
-        `).all(from, to)
+        const { data, error } = await supabase
+          .from('special_dates')
+          .select('*')
+          .gte('date', from)
+          .lte('date', to)
+          .order('date');
+        
+        if (error) throw error;
+        specialDates = data || [];
       } else {
         // Get all dates
-        specialDates = db.prepare(`
-          SELECT * FROM special_dates ORDER BY date
-        `).all()
+        const { data, error } = await supabase
+          .from('special_dates')
+          .select('*')
+          .order('date');
+        
+        if (error) throw error;
+        specialDates = data || [];
       }
       
       return res.status(200).json(specialDates || [])
@@ -94,11 +133,15 @@ export default async function handler(
         return res.status(400).json({ error: 'Date is required' })
       }
       
-      const result = db.prepare(`
-        DELETE FROM special_dates WHERE date = ?
-      `).run(date)
+      const { error, count } = await supabase
+        .from('special_dates')
+        .delete()
+        .eq('date', date)
+        .select('count');
       
-      if (result.changes === 0) {
+      if (error) throw error;
+      
+      if (count === 0) {
         return res.status(404).json({ error: 'Special date not found' })
       }
       

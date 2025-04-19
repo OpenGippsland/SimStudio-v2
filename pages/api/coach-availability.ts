@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import db from '../../lib/db'
+import { supabase } from '../../lib/supabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,25 +20,65 @@ export default async function handler(
         return res.status(400).json({ error: 'Invalid hour (0-23)' })
       }
 
-      const stmt = db.prepare(`
-        INSERT INTO coach_availability (coach_id, day_of_week, start_hour, end_hour)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(coach_id, day_of_week, start_hour) DO UPDATE SET
-        end_hour = excluded.end_hour
-      `)
-
-      const result = stmt.run(coachId, dayOfWeek, startHour, endHour)
-      return res.status(201).json({ id: result.lastInsertRowid })
+      // Check if record exists for this coach, day, and start hour
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('coach_availability')
+        .select('id')
+        .eq('coach_id', coachId)
+        .eq('day_of_week', dayOfWeek)
+        .eq('start_hour', startHour)
+        .single();
+      
+      let result;
+      
+      if (existingRecord) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('coach_availability')
+          .update({
+            end_hour: endHour
+          })
+          .eq('id', existingRecord.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('coach_availability')
+          .insert({
+            coach_id: coachId,
+            day_of_week: dayOfWeek,
+            start_hour: startHour,
+            end_hour: endHour
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+      
+      return res.status(201).json({ id: result.id })
     }
     else if (req.method === 'GET') {
       const { coachId } = req.query
-      const availability = db.prepare(`
-        SELECT * FROM coach_availability 
-        ${coachId ? 'WHERE coach_id = ?' : ''}
-        ORDER BY coach_id, day_of_week, start_hour
-      `).all(coachId ? [coachId] : [])
       
-      return res.status(200).json(availability)
+      let query = supabase
+        .from('coach_availability')
+        .select('*');
+      
+      if (coachId) {
+        query = query.eq('coach_id', coachId);
+      }
+      
+      const { data, error } = await query.order('coach_id').order('day_of_week').order('start_hour');
+      
+      if (error) throw error;
+      
+      return res.status(200).json(data || [])
     }
     else {
       res.setHeader('Allow', ['GET', 'POST'])

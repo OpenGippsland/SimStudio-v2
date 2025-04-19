@@ -71,7 +71,9 @@ export default async function handler(
         .select('*');
       
       if (coachId) {
-        query = query.eq('coach_id', coachId);
+        // Handle case where coachId could be a string or an array of strings
+        const coachIdValue = Array.isArray(coachId) ? coachId[0] : coachId;
+        query = query.eq('coach_id', coachIdValue);
       }
       
       const { data, error } = await query.order('coach_id').order('day_of_week').order('start_hour');

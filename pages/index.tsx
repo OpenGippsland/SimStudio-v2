@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Head>
-        <title>SimStudio - Flight Simulator Booking System</title>
+        <title>SimStudio - Driving Simulator Booking System</title>
       </Head>
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">

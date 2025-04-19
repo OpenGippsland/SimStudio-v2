@@ -126,6 +126,6 @@ The booking system uses the following tables:
 ### 4. Recurring Bookings
 - Allow users to set up weekly or regular sessions
 
-### 5. Trade Customer Rules
+### 5. Trade/Group Customer Rules
 - Special permissions for booking multiple simulators
 - Facility booking options

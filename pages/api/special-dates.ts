@@ -93,22 +93,29 @@ export default async function handler(
       
       let specialDates;
       if (date) {
+        // Handle case where date could be a string or an array of strings
+        const dateValue = Array.isArray(date) ? date[0] : date;
+        
         // Get specific date
         const { data, error } = await supabase
           .from('special_dates')
           .select('*')
-          .eq('date', date)
+          .eq('date', dateValue)
           .single();
         
         if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
         specialDates = data || null;
       } else if (from && to) {
+        // Handle case where from/to could be a string or an array of strings
+        const fromValue = Array.isArray(from) ? from[0] : from;
+        const toValue = Array.isArray(to) ? to[0] : to;
+        
         // Get date range
         const { data, error } = await supabase
           .from('special_dates')
           .select('*')
-          .gte('date', from)
-          .lte('date', to)
+          .gte('date', fromValue)
+          .lte('date', toValue)
           .order('date');
         
         if (error) throw error;
@@ -133,10 +140,13 @@ export default async function handler(
         return res.status(400).json({ error: 'Date is required' })
       }
       
+      // Handle case where date could be a string or an array of strings
+      const dateValue = Array.isArray(date) ? date[0] : date;
+      
       const { error, count } = await supabase
         .from('special_dates')
         .delete()
-        .eq('date', date)
+        .eq('date', dateValue)
         .select('count');
       
       if (error) throw error;

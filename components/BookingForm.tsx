@@ -27,6 +27,21 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
   const [selectedUserCredits, setSelectedUserCredits] = useState<number | null>(null)
   const [attemptedClosedDate, setAttemptedClosedDate] = useState<string | null>(null)
   const [insufficientCredits, setInsufficientCredits] = useState(false)
+  const [useFallbackDatePicker, setUseFallbackDatePicker] = useState(false)
+  const [dateComponents, setDateComponents] = useState({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+    day: new Date().getDate()
+  })
+  
+  // Detect iOS devices and set fallback date picker automatically
+  useEffect(() => {
+    // Check if the device is iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    if (isIOS) {
+      setUseFallbackDatePicker(true);
+    }
+  }, []);
   
   // Fetch users, business hours, and special dates on component mount
   useEffect(() => {
@@ -343,17 +358,126 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
       
       <div className="mb-4">
         <label className="block text-gray-700 mb-2">Date</label>
-        <input
-          type="date"
-          name="date"
-          value={formData.date}
-          onChange={handleChange}
-          onFocus={disableDates}
-          min={new Date().toISOString().split('T')[0]}
-          className={`w-full p-2 border border-gray-300 rounded ${formData.date && isDateClosed(formData.date) ? 'date-closed' : ''}`}
-          required
-          onKeyDown={(e) => e.preventDefault()} // Prevent manual entry
-        />
+        <div className="flex items-center mb-2">
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            onFocus={disableDates}
+            min={new Date().toISOString().split('T')[0]}
+            className={`w-full p-2 border border-gray-300 rounded ${formData.date && isDateClosed(formData.date) ? 'date-closed' : ''}`}
+            required={!useFallbackDatePicker}
+            onKeyDown={(e) => e.preventDefault()} // Prevent manual entry
+            // Add iOS-specific attributes
+            pattern="\d{4}-\d{2}-\d{2}"
+            placeholder="YYYY-MM-DD"
+            disabled={useFallbackDatePicker}
+          />
+          <button 
+            type="button" 
+            onClick={() => setUseFallbackDatePicker(!useFallbackDatePicker)}
+            className="ml-2 px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          >
+            {useFallbackDatePicker ? "Use Calendar" : "Having Issues?"}
+          </button>
+        </div>
+        
+        {useFallbackDatePicker ? (
+          <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200">
+            <p className="text-sm text-gray-600 mb-2">Select date using dropdown menus:</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Month</label>
+                <select 
+                  value={dateComponents.month}
+                  onChange={(e) => {
+                    const newMonth = parseInt(e.target.value);
+                    setDateComponents(prev => ({...prev, month: newMonth}));
+                    
+                    // Update the formData.date
+                    const newDate = new Date(dateComponents.year, newMonth - 1, dateComponents.day);
+                    const dateString = newDate.toISOString().split('T')[0];
+                    
+                    if (!isDateClosed(dateString)) {
+                      setFormData(prev => ({...prev, date: dateString}));
+                    } else {
+                      setAttemptedClosedDate(dateString);
+                    }
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  {Array.from({length: 12}, (_, i) => i + 1).map(month => (
+                    <option key={month} value={month}>
+                      {new Date(2000, month - 1, 1).toLocaleString('default', { month: 'long' })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Day</label>
+                <select 
+                  value={dateComponents.day}
+                  onChange={(e) => {
+                    const newDay = parseInt(e.target.value);
+                    setDateComponents(prev => ({...prev, day: newDay}));
+                    
+                    // Update the formData.date
+                    const newDate = new Date(dateComponents.year, dateComponents.month - 1, newDay);
+                    const dateString = newDate.toISOString().split('T')[0];
+                    
+                    if (!isDateClosed(dateString)) {
+                      setFormData(prev => ({...prev, date: dateString}));
+                    } else {
+                      setAttemptedClosedDate(dateString);
+                    }
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  {Array.from(
+                    {length: new Date(dateComponents.year, dateComponents.month, 0).getDate()}, 
+                    (_, i) => i + 1
+                  ).map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Year</label>
+                <select 
+                  value={dateComponents.year}
+                  onChange={(e) => {
+                    const newYear = parseInt(e.target.value);
+                    setDateComponents(prev => ({...prev, year: newYear}));
+                    
+                    // Update the formData.date
+                    const newDate = new Date(newYear, dateComponents.month - 1, dateComponents.day);
+                    const dateString = newDate.toISOString().split('T')[0];
+                    
+                    if (!isDateClosed(dateString)) {
+                      setFormData(prev => ({...prev, date: dateString}));
+                    } else {
+                      setAttemptedClosedDate(dateString);
+                    }
+                  }}
+                  className="w-full p-2 border border-gray-300 rounded"
+                >
+                  {[new Date().getFullYear(), new Date().getFullYear() + 1].map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Selected date: {formData.date ? new Date(formData.date).toLocaleDateString() : 'None'}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 mt-1">
+            Select a date between {new Date().toLocaleDateString()} and {new Date(new Date().setDate(new Date().getDate() + 30)).toLocaleDateString()}
+          </p>
+        )}
+        
         {/* Display message if selected date is closed or attempted closed date */}
         {(formData.date && isDateClosed(formData.date) || attemptedClosedDate) && (
           <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded">

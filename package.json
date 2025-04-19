@@ -17,9 +17,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/marked": "^5.0.2",
     "@types/react": "^19.1.2",
     "better-sqlite3": "^11.9.1",
     "dotenv": "^16.5.0",
+    "marked": "^15.0.8",
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

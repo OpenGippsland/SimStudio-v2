@@ -26,6 +26,9 @@ function MyApp({ Component, pageProps }: AppProps) {
           <Link href="/admin" className={`px-4 py-2 rounded-md transition-colors ${isActive('/admin') ? 'bg-blue-700 text-white' : 'hover:text-gray-300'}`}>
             Admin
           </Link>
+          <Link href="/business-rules" className={`px-4 py-2 rounded-md transition-colors ${isActive('/business-rules') ? 'bg-blue-700 text-white' : 'hover:text-gray-300'}`}>
+            Biz Rules
+          </Link>
         </div>
       </nav>
       <main className="flex-grow">

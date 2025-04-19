@@ -149,14 +149,18 @@ export default async function handler(
       // Check coach availability if specific coach is selected
       if (coach && coach !== 'none' && coach !== 'any') {
         // Check if any availability block covers the requested time
+        // For coach availability, we need to find blocks where:
+        // 1. The coach ID matches
+        // 2. The day of week matches
+        // 3. The coach's available hours cover the requested time slot
+        //    (start_hour <= booking start_hour AND end_hour >= booking end_hour)
         const { data: coachAvailability, error: coachAvailabilityError } = await supabase
           .from('coach_availability')
           .select('id')
           .eq('coach_id', coach)
           .eq('day_of_week', dayOfWeek)
-          .or(`start_hour.lte.${startHour},end_hour.gte.${endHour}`)
-          .or(`start_hour.gte.${startHour},end_hour.lte.${endHour}`)
-          .or(`start_hour.lte.${startHour},end_hour.gte.${startHour}`);
+          .lte('start_hour', startHour)
+          .gte('end_hour', endHour);
         
         if (!coachAvailability || coachAvailability.length === 0) {
           return res.status(400).json({ 
@@ -165,13 +169,15 @@ export default async function handler(
         }
 
         // Check for existing bookings with this coach
+        // We need to find any bookings where:
+        // 1. The coach is the same as the requested coach
+        // 2. The booking overlaps with the requested time slot
         const { data: existingCoachBooking, error: existingCoachBookingError } = await supabase
           .from('bookings')
           .select('id')
           .eq('coach', coach)
-          .or(`and(start_time.lt.${endDate.toISOString()},end_time.gt.${startDate.toISOString()})`)
-          .or(`and(start_time.lt.${startDate.toISOString()},end_time.gt.${endDate.toISOString()})`)
-          .or(`and(start_time.gte.${startDate.toISOString()},end_time.lte.${endDate.toISOString()})`);
+          .filter('start_time', 'lt', endDate.toISOString())
+          .filter('end_time', 'gt', startDate.toISOString());
         
         if (existingCoachBooking && existingCoachBooking.length > 0) {
           const formattedTime = new Date(startDate).toLocaleTimeString('en-AU', { 
@@ -185,12 +191,12 @@ export default async function handler(
       }
 
       // Find first available simulator (1-4)
+      // We need to find any bookings that overlap with the requested time slot
       const { data: bookedSimulators, error: bookedSimulatorsError } = await supabase
         .from('bookings')
         .select('simulator_id')
-        .or(`and(start_time.lt.${endDate.toISOString()},end_time.gt.${startDate.toISOString()})`)
-        .or(`and(start_time.lt.${startDate.toISOString()},end_time.gt.${endDate.toISOString()})`)
-        .or(`and(start_time.gte.${startDate.toISOString()},end_time.lte.${endDate.toISOString()})`);
+        .filter('start_time', 'lt', endDate.toISOString())
+        .filter('end_time', 'gt', startDate.toISOString());
       
       const bookedSimulatorIds = bookedSimulators?.map(b => b.simulator_id) || [];
       

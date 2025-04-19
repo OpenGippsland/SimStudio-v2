@@ -153,16 +153,20 @@ export default async function handler(
         // 1. The coach ID matches
         // 2. The day of week matches
         // 3. The coach's available hours cover the requested time slot
-        //    (start_hour <= booking start_hour AND end_hour >= booking end_hour)
         const { data: coachAvailability, error: coachAvailabilityError } = await supabase
           .from('coach_availability')
-          .select('id')
+          .select('*')
           .eq('coach_id', coach)
-          .eq('day_of_week', dayOfWeek)
-          .lte('start_hour', startHour)
-          .gte('end_hour', endHour);
+          .eq('day_of_week', dayOfWeek);
         
-        if (!coachAvailability || coachAvailability.length === 0) {
+        // Manually check if any of the coach's availability blocks cover the requested time
+        // We need to check if the coach is available for the entire duration of the booking
+        const isCoachAvailable = coachAvailability?.some(block => {
+          // Check if the coach's availability block covers the entire booking duration
+          return block.start_hour <= startHour && block.end_hour >= endHour;
+        });
+        
+        if (!coachAvailability || coachAvailability.length === 0 || !isCoachAvailable) {
           return res.status(400).json({ 
             error: `The selected coach is not available at this time. Please choose a different time or select a different coach.` 
           });
@@ -172,20 +176,34 @@ export default async function handler(
         // We need to find any bookings where:
         // 1. The coach is the same as the requested coach
         // 2. The booking overlaps with the requested time slot
-        const { data: existingCoachBooking, error: existingCoachBookingError } = await supabase
+        const { data: existingCoachBookings, error: existingCoachBookingError } = await supabase
           .from('bookings')
-          .select('id')
-          .eq('coach', coach)
-          .filter('start_time', 'lt', endDate.toISOString())
-          .filter('end_time', 'gt', startDate.toISOString());
+          .select('id, start_time, end_time')
+          .eq('coach', coach);
         
-        if (existingCoachBooking && existingCoachBooking.length > 0) {
-          const formattedTime = new Date(startDate).toLocaleTimeString('en-AU', { 
+        // Manually check for overlapping bookings
+        const hasOverlap = existingCoachBookings?.some(existingBooking => {
+          const existingStart = new Date(existingBooking.start_time);
+          const existingEnd = new Date(existingBooking.end_time);
+          
+          // Check if there's any overlap between the existing booking and the requested booking
+          // An overlap occurs if:
+          // 1. The start of the new booking is before the end of the existing booking, AND
+          // 2. The end of the new booking is after the start of the existing booking
+          return startDate < existingEnd && endDate > existingStart;
+        });
+        
+        if (hasOverlap) {
+          const formattedStartTime = new Date(startDate).toLocaleTimeString('en-AU', { 
+            hour: 'numeric', 
+            minute: 'numeric' 
+          });
+          const formattedEndTime = new Date(endDate).toLocaleTimeString('en-AU', { 
             hour: 'numeric', 
             minute: 'numeric' 
           });
           return res.status(400).json({ 
-            error: `The selected coach is already booked at ${formattedTime}. Please choose a different time or select a different coach.` 
+            error: `The selected coach is already booked during the requested time period (${formattedStartTime} - ${formattedEndTime}). Please choose a different time or select a different coach.` 
           });
         }
       }

@@ -230,14 +230,25 @@ export default async function handler(
         });
         
         if (hasOverlap) {
-          const formattedStartTime = new Date(startDate).toLocaleTimeString('en-AU', { 
+          // Format times using the local timezone for display
+          const formattedStartTime = localStartDate.toLocaleTimeString('en-AU', { 
             hour: 'numeric', 
-            minute: 'numeric' 
+            minute: 'numeric',
+            hour12: true
           });
-          const formattedEndTime = new Date(endDate).toLocaleTimeString('en-AU', { 
+          const formattedEndTime = localEndDate.toLocaleTimeString('en-AU', { 
             hour: 'numeric', 
-            minute: 'numeric' 
+            minute: 'numeric',
+            hour12: true
           });
+          
+          console.log('Coach booking overlap times:', {
+            originalStartTime: startDate.toLocaleTimeString(),
+            originalEndTime: endDate.toLocaleTimeString(),
+            localStartTime: formattedStartTime,
+            localEndTime: formattedEndTime
+          });
+          
           return res.status(400).json({ 
             error: `The selected coach is already booked during the requested time period (${formattedStartTime} - ${formattedEndTime}). Please choose a different time or select a different coach.` 
           });
@@ -276,15 +287,25 @@ export default async function handler(
       }
 
       if (availableSimulator > 4) {
-        const formattedTime = new Date(startDate).toLocaleTimeString('en-AU', { 
+        // Format times using the local timezone for display
+        const formattedTime = localStartDate.toLocaleTimeString('en-AU', { 
           hour: 'numeric', 
-          minute: 'numeric' 
+          minute: 'numeric',
+          hour12: true
         });
-        const formattedDate = new Date(startDate).toLocaleDateString('en-AU', { 
+        const formattedDate = localStartDate.toLocaleDateString('en-AU', { 
           weekday: 'long', 
           day: 'numeric',
           month: 'long'
         });
+        
+        console.log('All simulators booked time check:', {
+          originalTime: startDate.toLocaleTimeString(),
+          localTime: formattedTime,
+          originalDate: startDate.toLocaleDateString(),
+          localDate: formattedDate
+        });
+        
         return res.status(400).json({ 
           error: `All simulators are booked at ${formattedTime} on ${formattedDate}. Please select a different time for your booking.` 
         });

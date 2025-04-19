@@ -58,10 +58,25 @@ export default async function handler(
       }
 
       // Check if booking is within business hours
-      const dayOfWeek = startDate.getDay();
-      const startHour = startDate.getHours();
-      const endHour = endDate.getHours();
-      const endMinute = endDate.getMinutes();
+      // Convert dates to local timezone for business hour checks
+      const localStartDate = new Date(startDate.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+      const localEndDate = new Date(endDate.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+      
+      const dayOfWeek = localStartDate.getDay();
+      const startHour = localStartDate.getHours();
+      const endHour = localEndDate.getHours();
+      const endMinute = localEndDate.getMinutes();
+      
+      console.log('Booking time check:', {
+        originalStartDate: startDate.toISOString(),
+        originalEndDate: endDate.toISOString(),
+        localStartDate: localStartDate.toISOString(),
+        localEndDate: localEndDate.toISOString(),
+        dayOfWeek,
+        startHour,
+        endHour,
+        endMinute
+      });
       
       // Get business hours for the day of week
       const { data: businessHours, error: businessHoursError } = await supabase
@@ -92,7 +107,8 @@ export default async function handler(
       }
       
       // Format date as YYYY-MM-DD for comparison
-      const bookingDate = startDate.toISOString().split('T')[0];
+      // Use the local date for special date checks
+      const bookingDate = localStartDate.toISOString().split('T')[0];
       
       // Check if it's a special date
       const { data: specialDate, error: specialDateError } = await supabase
@@ -161,9 +177,19 @@ export default async function handler(
         
         // Manually check if any of the coach's availability blocks cover the requested time
         // We need to check if the coach is available for the entire duration of the booking
+        // Use local hours for coach availability check
         const isCoachAvailable = coachAvailability?.some(block => {
           // Check if the coach's availability block covers the entire booking duration
           return block.start_hour <= startHour && block.end_hour >= endHour;
+        });
+        
+        console.log('Coach availability check:', {
+          coach,
+          dayOfWeek,
+          startHour,
+          endHour,
+          coachAvailability,
+          isCoachAvailable
         });
         
         if (!coachAvailability || coachAvailability.length === 0 || !isCoachAvailable) {
@@ -186,11 +212,21 @@ export default async function handler(
           const existingStart = new Date(existingBooking.start_time);
           const existingEnd = new Date(existingBooking.end_time);
           
+          // Convert existing booking times to local timezone for comparison
+          const localExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          const localExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          
           // Check if there's any overlap between the existing booking and the requested booking
           // An overlap occurs if:
           // 1. The start of the new booking is before the end of the existing booking, AND
           // 2. The end of the new booking is after the start of the existing booking
-          return startDate < existingEnd && endDate > existingStart;
+          return localStartDate < localExistingEnd && localEndDate > localExistingStart;
+        });
+        
+        console.log('Coach booking overlap check:', {
+          coach,
+          existingCoachBookings,
+          hasOverlap
         });
         
         if (hasOverlap) {
@@ -212,11 +248,27 @@ export default async function handler(
       // We need to find any bookings that overlap with the requested time slot
       const { data: bookedSimulators, error: bookedSimulatorsError } = await supabase
         .from('bookings')
-        .select('simulator_id')
+        .select('simulator_id, start_time, end_time')
         .filter('start_time', 'lt', endDate.toISOString())
         .filter('end_time', 'gt', startDate.toISOString());
       
-      const bookedSimulatorIds = bookedSimulators?.map(b => b.simulator_id) || [];
+      // Convert to local time and check for overlaps
+      const bookedSimulatorIds = bookedSimulators?.filter(booking => {
+        const bookingStart = new Date(booking.start_time);
+        const bookingEnd = new Date(booking.end_time);
+        
+        // Convert to local timezone
+        const localBookingStart = new Date(bookingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+        const localBookingEnd = new Date(bookingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+        
+        // Check for overlap in local time
+        return localStartDate < localBookingEnd && localEndDate > localBookingStart;
+      }).map(b => b.simulator_id) || [];
+      
+      console.log('Simulator availability check:', {
+        bookedSimulators,
+        bookedSimulatorIds
+      });
       
       let availableSimulator = 1;
       while (bookedSimulatorIds.includes(availableSimulator) && availableSimulator <= 4) {

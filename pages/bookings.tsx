@@ -5,6 +5,8 @@ import Link from 'next/link'
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   const fetchBookings = async () => {
     setLoading(true)
@@ -28,6 +30,45 @@ export default function BookingsPage() {
   useEffect(() => {
     fetchBookings()
   }, [])
+
+  // Handle booking deletion
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to cancel this booking? Your credits will be refunded.')) {
+      return
+    }
+    
+    setDeleteLoading(bookingId)
+    setMessage(null)
+    
+    try {
+      const response = await fetch(`/api/bookings?id=${bookingId}`, {
+        method: 'DELETE',
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setMessage({ 
+          type: 'success', 
+          text: `Booking cancelled successfully. ${data.refundedHours} hour${data.refundedHours !== 1 ? 's' : ''} refunded.` 
+        })
+        fetchBookings()
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: data.error || 'Failed to cancel booking' 
+        })
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error)
+      setMessage({ 
+        type: 'error', 
+        text: 'An error occurred while cancelling the booking' 
+      })
+    } finally {
+      setDeleteLoading(null)
+    }
+  }
 
   // Format date for better readability
   const formatDate = (dateString: string) => {
@@ -89,6 +130,14 @@ export default function BookingsPage() {
         </button>
       </div>
       
+      {message && (
+        <div className={`mb-6 p-4 rounded-lg ${
+          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {message.text}
+        </div>
+      )}
+      
       {loading ? (
         <div className="text-center py-8">
           <p className="text-gray-600">Loading bookings...</p>
@@ -131,6 +180,23 @@ export default function BookingsPage() {
                         {booking.status || 'confirmed'}
                       </span>
                     </div>
+                    
+                    {/* Only show cancel button for future bookings */}
+                    {new Date(booking.start_time) > new Date() && (
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={() => handleDeleteBooking(booking.id)}
+                          disabled={deleteLoading === booking.id}
+                          className={`w-full text-sm py-1.5 px-3 rounded ${
+                            deleteLoading === booking.id
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          {deleteLoading === booking.id ? 'Cancelling...' : 'Cancel Booking'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

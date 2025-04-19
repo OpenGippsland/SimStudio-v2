@@ -268,8 +268,92 @@ export default async function handler(
       
       return res.status(200).json(bookings || []);
     }
+    else if (req.method === 'DELETE') {
+      const { id } = req.query;
+      
+      if (!id) {
+        return res.status(400).json({ error: 'Booking ID is required' });
+      }
+      
+      // Handle case where id could be a string or an array of strings
+      const bookingId = Array.isArray(id) ? id[0] : id;
+      
+      // Get the booking to check if it exists and to get the user_id and booking hours
+      const { data: booking, error: getBookingError } = await supabase
+        .from('bookings')
+        .select('id, user_id, start_time, end_time')
+        .eq('id', bookingId)
+        .single();
+      
+      if (getBookingError) {
+        if (getBookingError.code === 'PGRST116') { // No rows returned
+          return res.status(404).json({ error: 'Booking not found' });
+        }
+        throw getBookingError;
+      }
+      
+      // Calculate booking hours to refund
+      const startDate = new Date(booking.start_time);
+      const endDate = new Date(booking.end_time);
+      const bookingHours = Math.ceil((endDate.getTime() - startDate.getTime()) / (60 * 60 * 1000));
+      
+      // Check if the booking is in the future (can only cancel future bookings)
+      const now = new Date();
+      if (startDate <= now) {
+        return res.status(400).json({ error: 'Cannot cancel bookings that have already started or completed' });
+      }
+      
+      // Delete the booking
+      const { error: deleteError } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+      
+      if (deleteError) {
+        throw deleteError;
+      }
+      
+      // Refund the credits to the user
+      const { data: userCredits, error: getUserCreditsError } = await supabase
+        .from('credits')
+        .select('simulator_hours')
+        .eq('user_id', booking.user_id)
+        .single();
+      
+      if (getUserCreditsError) {
+        // If we can't get the user credits, we'll still consider the booking cancelled
+        console.error('Error getting user credits for refund:', getUserCreditsError);
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Booking cancelled, but credits could not be refunded' 
+        });
+      }
+      
+      // Update the user's credits
+      const { error: updateCreditsError } = await supabase
+        .from('credits')
+        .update({ 
+          simulator_hours: (userCredits.simulator_hours || 0) + bookingHours 
+        })
+        .eq('user_id', booking.user_id);
+      
+      if (updateCreditsError) {
+        // If we can't update the user credits, we'll still consider the booking cancelled
+        console.error('Error refunding credits:', updateCreditsError);
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Booking cancelled, but credits could not be refunded' 
+        });
+      }
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Booking cancelled and credits refunded',
+        refundedHours: bookingHours
+      });
+    }
     else {
-      res.setHeader('Allow', ['GET', 'POST'])
+      res.setHeader('Allow', ['GET', 'POST', 'DELETE'])
       return res.status(405).end(`Method ${req.method} Not Allowed`)
     }
   } catch (error) {

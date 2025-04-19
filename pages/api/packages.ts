@@ -15,7 +15,7 @@ export default async function handler(
         const { data: package_, error } = await supabase
           .from('packages')
           .select('*')
-          .eq('id', id)
+          .eq('id', typeof id === 'string' ? parseInt(id, 10) : parseInt(id[0], 10))
           .eq('is_active', true)
           .single();
         
@@ -91,7 +91,7 @@ export default async function handler(
       const { data: existingPackage, error: checkError } = await supabase
         .from('packages')
         .select('id')
-        .eq('id', id)
+        .eq('id', typeof id === 'string' ? parseInt(id, 10) : parseInt(id[0], 10))
         .single();
       
       if (checkError || !existingPackage) {
@@ -115,7 +115,7 @@ export default async function handler(
       const { error } = await supabase
         .from('packages')
         .update(updateData)
-        .eq('id', id);
+        .eq('id', typeof id === 'string' ? parseInt(id, 10) : parseInt(id[0], 10));
       
       if (error) {
         throw error;
@@ -136,7 +136,7 @@ export default async function handler(
       const { data: existingPackage, error: checkError } = await supabase
         .from('packages')
         .select('id')
-        .eq('id', id)
+        .eq('id', typeof id === 'string' ? parseInt(id, 10) : parseInt(id[0], 10))
         .single();
       
       if (checkError || !existingPackage) {
@@ -147,7 +147,7 @@ export default async function handler(
       const { error } = await supabase
         .from('packages')
         .update({ is_active: false })
-        .eq('id', id);
+        .eq('id', typeof id === 'string' ? parseInt(id, 10) : parseInt(id[0], 10));
       
       if (error) {
         throw error;

@@ -76,7 +76,10 @@ export default async function handler(
       const isClosed = businessHours?.is_closed || false;
       
       if (isClosed) {
-        return res.status(400).json({ error: 'Bookings not available on this day' });
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return res.status(400).json({ 
+          error: `Bookings not available on ${dayNames[dayOfWeek]}s. The simulator is closed on this day of the week.` 
+        });
       }
       
       // Check if booking is within business hours
@@ -99,8 +102,14 @@ export default async function handler(
         .single();
       
       if (specialDate?.is_closed) {
+        const formattedDate = new Date(bookingDate).toLocaleDateString('en-AU', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
         return res.status(400).json({ 
-          error: 'Bookings not available on this date' 
+          error: `Bookings not available on ${formattedDate}. This date is marked as closed in our calendar.` 
         });
       }
       
@@ -150,7 +159,9 @@ export default async function handler(
           .or(`start_hour.lte.${startHour},end_hour.gte.${startHour}`);
         
         if (!coachAvailability || coachAvailability.length === 0) {
-          return res.status(400).json({ error: 'Coach not available at selected time' });
+          return res.status(400).json({ 
+            error: `The selected coach is not available at this time. Please choose a different time or select a different coach.` 
+          });
         }
 
         // Check for existing bookings with this coach
@@ -163,7 +174,13 @@ export default async function handler(
           .or(`and(start_time.gte.${startDate.toISOString()},end_time.lte.${endDate.toISOString()})`);
         
         if (existingCoachBooking && existingCoachBooking.length > 0) {
-          return res.status(400).json({ error: 'Coach already booked at this time' });
+          const formattedTime = new Date(startDate).toLocaleTimeString('en-AU', { 
+            hour: 'numeric', 
+            minute: 'numeric' 
+          });
+          return res.status(400).json({ 
+            error: `The selected coach is already booked at ${formattedTime}. Please choose a different time or select a different coach.` 
+          });
         }
       }
 
@@ -183,7 +200,18 @@ export default async function handler(
       }
 
       if (availableSimulator > 4) {
-        return res.status(400).json({ error: 'No available simulators for selected time' });
+        const formattedTime = new Date(startDate).toLocaleTimeString('en-AU', { 
+          hour: 'numeric', 
+          minute: 'numeric' 
+        });
+        const formattedDate = new Date(startDate).toLocaleDateString('en-AU', { 
+          weekday: 'long', 
+          day: 'numeric',
+          month: 'long'
+        });
+        return res.status(400).json({ 
+          error: `All simulators are booked at ${formattedTime} on ${formattedDate}. Please select a different time for your booking.` 
+        });
       }
 
       // Create booking and update credits in a transaction

@@ -79,8 +79,9 @@ The booking system uses the following tables:
 ### 5. Coach Availability Validation
 - Coaches have defined availability blocks in the `coach_availability` table
 - When a specific coach is requested, the system checks:
-  - If the coach has availability for that day/time
-  - If the coach is already booked during that time
+  - If the coach has availability for the entire duration of the booking (not just the start time)
+  - If the coach is already booked during any part of the requested time slot
+- The system prevents any overlapping bookings for coaches
 - Coach options:
   - 'none': No coach required
   - 'any': Any available coach
@@ -90,6 +91,23 @@ The booking system uses the following tables:
 - Valid date formats are required
 - End time must be after start time
 - Bookings are made in hourly increments
+
+## Recent Improvements
+
+### 1. Database Migration to Supabase
+- Migrated from SQLite to Supabase for better serverless compatibility
+- Updated all API endpoints to use Supabase client
+- Fixed type handling for query parameters in API endpoints
+
+### 2. Enhanced Coach Booking Validation
+- Improved validation to check coach availability for the entire booking duration
+- Fixed overlapping booking detection to prevent double-booking coaches
+- Enhanced error messages to provide more specific information about booking conflicts
+
+### 3. Booking Management UI
+- Added a dedicated bookings page with improved visualization
+- Implemented booking cancellation functionality with automatic credit refunds
+- Added grouping of bookings by date for better organization
 
 ## Future Enhancements
 

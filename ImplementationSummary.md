@@ -3,14 +3,14 @@
 ## System Architecture
 - **Frontend**: Next.js with TypeScript
 - **Styling**: Tailwind CSS
-- **Database**: SQLite
+- **Database**: Supabase (PostgreSQL)
 - **API**: REST endpoints
 
 ## Key Components
 
 ### Database Schema
 ```mermaid
-erDiagram
+erDiagram 
     users {
         id INTEGER PK
         shopify_id TEXT UNIQUE
@@ -95,6 +95,14 @@ erDiagram
 - `GET /api/bookings`
   - Lists all bookings
   - Returns: Booking[]
+
+- `DELETE /api/bookings`
+  - Cancels a booking and refunds credits
+  - Required query: id
+  - Returns: { success: true, message: string, refundedHours: number }
+  - Validation:
+    - Booking must exist
+    - Booking must be in the future
 
 #### Coach Availability
 - `POST /api/coach-availability`
@@ -232,7 +240,7 @@ curl -X PUT http://localhost:3001/api/user-credits?userId=1 -H "Content-Type: ap
 
 ## Next Steps
 - User authentication
-- Booking modification and cancellation
+- Booking modification functionality
 - Calendar view for visual booking management
 - Shopify integration
 - Recurring bookings feature
@@ -250,3 +258,15 @@ curl -X PUT http://localhost:3001/api/user-credits?userId=1 -H "Content-Type: ap
   - Package management for purchasing credits
   - Credit validation and deduction during booking
   - Admin interface for managing packages and user credits
+- Booking management:
+  - Dedicated bookings page with date-based organization
+  - Booking cancellation with automatic credit refunds
+  - Improved visualization of bookings
+- Enhanced validation:
+  - Coach availability checking for entire booking duration
+  - Robust overlapping booking prevention
+  - Detailed error messages for booking conflicts
+- Database improvements:
+  - Migration from SQLite to Supabase (PostgreSQL)
+  - Serverless compatibility for Vercel deployment
+  - Improved type handling in API endpoints

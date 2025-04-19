@@ -15,6 +15,7 @@ export type Database = {
           cancellation_reason: string | null
           coach: string | null
           end_time: string | null
+          has_coaching: boolean | null
           id: number
           simulator_id: number | null
           start_time: string | null
@@ -27,6 +28,7 @@ export type Database = {
           cancellation_reason?: string | null
           coach?: string | null
           end_time?: string | null
+          has_coaching?: boolean | null
           id?: number
           simulator_id?: number | null
           start_time?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           cancellation_reason?: string | null
           coach?: string | null
           end_time?: string | null
+          has_coaching?: boolean | null
           id?: number
           simulator_id?: number | null
           start_time?: string | null

@@ -155,7 +155,8 @@ export async function createBooking(bookingData: {
   end_time: string, 
   coach?: string,
   status?: string,
-  booking_type?: string
+  booking_type?: string,
+  has_coaching?: boolean
 }) {
   const { data, error } = await supabase
     .from('bookings')
@@ -176,7 +177,8 @@ export async function updateBooking(id: number, bookingData: {
   coach?: string,
   status?: string,
   cancellation_reason?: string,
-  booking_type?: string
+  booking_type?: string,
+  has_coaching?: boolean
 }) {
   const { data, error } = await supabase
     .from('bookings')

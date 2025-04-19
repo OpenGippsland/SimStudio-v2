@@ -36,10 +36,13 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
   
   // Detect iOS devices and set fallback date picker automatically
   useEffect(() => {
-    // Check if the device is iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    if (isIOS) {
-      setUseFallbackDatePicker(true);
+    // Only run on client-side to prevent hydration mismatch
+    if (typeof window !== 'undefined') {
+      // Check if the device is iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIOS) {
+        setUseFallbackDatePicker(true);
+      }
     }
   }, []);
   
@@ -469,12 +472,12 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Selected date: {formData.date ? new Date(formData.date).toLocaleDateString() : 'None'}
+              Selected date: {formData.date ? formData.date : 'None'}
             </p>
           </div>
         ) : (
           <p className="text-xs text-gray-500 mt-1">
-            Select a date between {new Date().toLocaleDateString()} and {new Date(new Date().setDate(new Date().getDate() + 30)).toLocaleDateString()}
+            Select a date for your booking (up to 30 days in advance)
           </p>
         )}
         

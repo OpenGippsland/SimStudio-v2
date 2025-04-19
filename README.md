@@ -59,6 +59,27 @@ The project includes a `vercel.json` configuration file that specifies the corre
 }
 ```
 
+### Setting Up Vercel Environment Variables
+
+For the Supabase integration to work in production, you need to set up environment variables in your Vercel project. We've included a helper script to make this process easier:
+
+```bash
+npm run setup-vercel
+```
+
+This script will:
+1. Read your local Supabase credentials from `.env.local`
+2. Guide you through setting these variables in your Vercel project
+3. Provide instructions for redeploying your project
+
+Alternatively, you can manually set these environment variables in the Vercel dashboard:
+1. Go to your Vercel project
+2. Navigate to Settings > Environment Variables
+3. Add the following variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous API key
+4. Redeploy your project
+
 ### Important Notes
 
 - The SQLite database file (`bookings.db`) is still included in the repository for local development and testing purposes.

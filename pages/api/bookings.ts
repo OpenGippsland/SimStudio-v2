@@ -276,7 +276,13 @@ export default async function handler(
       }
       
       // Handle case where id could be a string or an array of strings
-      const bookingId = Array.isArray(id) ? id[0] : id;
+      const bookingIdStr = Array.isArray(id) ? id[0] : id;
+      // Convert to number since the database expects a number for the id
+      const bookingId = parseInt(bookingIdStr, 10);
+      
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ error: 'Invalid booking ID' });
+      }
       
       // Get the booking to check if it exists and to get the user_id and booking hours
       const { data: booking, error: getBookingError } = await supabase
@@ -307,7 +313,7 @@ export default async function handler(
       const { error: deleteError } = await supabase
         .from('bookings')
         .delete()
-        .eq('id', bookingId);
+        .eq('id', bookingId); // bookingId is already converted to a number above
       
       if (deleteError) {
         throw deleteError;
@@ -317,7 +323,7 @@ export default async function handler(
       const { data: userCredits, error: getUserCreditsError } = await supabase
         .from('credits')
         .select('simulator_hours')
-        .eq('user_id', booking.user_id)
+        .eq('user_id', booking.user_id) // user_id is already a number in the booking object
         .single();
       
       if (getUserCreditsError) {
@@ -335,7 +341,7 @@ export default async function handler(
         .update({ 
           simulator_hours: (userCredits.simulator_hours || 0) + bookingHours 
         })
-        .eq('user_id', booking.user_id);
+        .eq('user_id', booking.user_id); // user_id is already a number in the booking object
       
       if (updateCreditsError) {
         // If we can't update the user credits, we'll still consider the booking cancelled

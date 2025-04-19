@@ -92,8 +92,14 @@ export default async function handler(
       
       if (isClosed) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        console.log('Business hours closed day check:', {
+          dayOfWeek,
+          dayName: dayNames[dayOfWeek],
+          businessHours,
+          isClosed
+        });
         return res.status(400).json({ 
-          error: `Bookings not available on ${dayNames[dayOfWeek]}s. The simulator is closed on this day of the week.` 
+          error: `Bookings not available on ${dayNames[dayOfWeek]}s. The simulator is closed on this day of the week. (Day of week: ${dayOfWeek}, Business hours: ${JSON.stringify(businessHours)})` 
         });
       }
       
@@ -101,8 +107,16 @@ export default async function handler(
       if (startHour < openHour || 
           endHour > closeHour || 
           (endHour === closeHour && endMinute > 0)) {
+        console.log('Business hours time range check:', {
+          startHour,
+          endHour,
+          endMinute,
+          openHour,
+          closeHour,
+          businessHours
+        });
         return res.status(400).json({ 
-          error: `Bookings must be between ${openHour}am and ${closeHour > 12 ? closeHour - 12 : closeHour}${closeHour >= 12 ? 'pm' : 'am'}` 
+          error: `Bookings must be between ${openHour}am and ${closeHour > 12 ? closeHour - 12 : closeHour}${closeHour >= 12 ? 'pm' : 'am'}. Your booking: ${startHour}:${localStartDate.getMinutes()} - ${endHour}:${localEndDate.getMinutes()} (Day: ${dayOfWeek})` 
         });
       }
       
@@ -124,8 +138,13 @@ export default async function handler(
           month: 'long', 
           day: 'numeric' 
         });
+        console.log('Special date closed check:', {
+          bookingDate,
+          specialDate,
+          formattedDate
+        });
         return res.status(400).json({ 
-          error: `Bookings not available on ${formattedDate}. This date is marked as closed in our calendar.` 
+          error: `Bookings not available on ${formattedDate}. This date is marked as closed in our calendar. (Special date: ${JSON.stringify(specialDate)})` 
         });
       }
       
@@ -138,8 +157,17 @@ export default async function handler(
           if (startHour < specialOpenHour || 
               endHour > specialCloseHour || 
               (endHour === specialCloseHour && endMinute > 0)) {
+            console.log('Special date hours check:', {
+              startHour,
+              endHour,
+              endMinute,
+              specialOpenHour,
+              specialCloseHour,
+              specialDate,
+              bookingDate
+            });
             return res.status(400).json({ 
-              error: `Bookings on this date must be between ${specialOpenHour}am and ${specialCloseHour > 12 ? specialCloseHour - 12 : specialCloseHour}${specialCloseHour >= 12 ? 'pm' : 'am'}` 
+              error: `Bookings on this date must be between ${specialOpenHour}am and ${specialCloseHour > 12 ? specialCloseHour - 12 : specialCloseHour}${specialCloseHour >= 12 ? 'pm' : 'am'}. Your booking: ${startHour}:${localStartDate.getMinutes()} - ${endHour}:${localEndDate.getMinutes()} (Special date: ${bookingDate})` 
             });
           }
         }
@@ -242,15 +270,49 @@ export default async function handler(
             hour12: true
           });
           
-          console.log('Coach booking overlap times:', {
-            originalStartTime: startDate.toLocaleTimeString(),
-            originalEndTime: endDate.toLocaleTimeString(),
-            localStartTime: formattedStartTime,
-            localEndTime: formattedEndTime
+          // Find the overlapping booking(s) for more detailed error message
+          const overlappingBookings = existingCoachBookings?.filter(existingBooking => {
+            const existingStart = new Date(existingBooking.start_time);
+            const existingEnd = new Date(existingBooking.end_time);
+            
+            // Convert to local timezone
+            const localExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            const localExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            
+            return localStartDate < localExistingEnd && localEndDate > localExistingStart;
+          });
+          
+          // Format the existing booking times for the error message
+          const existingBookingsInfo = overlappingBookings?.map(booking => {
+            const existingStart = new Date(booking.start_time);
+            const existingEnd = new Date(booking.end_time);
+            
+            // Convert to local timezone
+            const localExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            const localExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            
+            const formattedExistingStart = localExistingStart.toLocaleTimeString('en-AU', { 
+              hour: 'numeric', 
+              minute: 'numeric',
+              hour12: true
+            });
+            const formattedExistingEnd = localExistingEnd.toLocaleTimeString('en-AU', { 
+              hour: 'numeric', 
+              minute: 'numeric',
+              hour12: true
+            });
+            
+            return `${formattedExistingStart} - ${formattedExistingEnd}`;
+          }).join(', ');
+          
+          console.log('Coach booking overlap details:', {
+            requestedTime: `${formattedStartTime} - ${formattedEndTime}`,
+            overlappingBookings: existingBookingsInfo,
+            coach
           });
           
           return res.status(400).json({ 
-            error: `The selected coach is already booked during the requested time period (${formattedStartTime} - ${formattedEndTime}). Please choose a different time or select a different coach.` 
+            error: `The selected coach (${coach}) is already booked during the requested time period (${formattedStartTime} - ${formattedEndTime}). Existing booking(s): ${existingBookingsInfo}. Please choose a different time or select a different coach.` 
           });
         }
       }
@@ -299,15 +361,39 @@ export default async function handler(
           month: 'long'
         });
         
+        // Format the booked simulators info for the error message
+        const bookedSimulatorsInfo = bookedSimulators?.map(booking => {
+          const bookingStart = new Date(booking.start_time);
+          const bookingEnd = new Date(booking.end_time);
+          
+          // Convert to local timezone
+          const localBookingStart = new Date(bookingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          const localBookingEnd = new Date(bookingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          
+          const formattedBookingStart = localBookingStart.toLocaleTimeString('en-AU', { 
+            hour: 'numeric', 
+            minute: 'numeric',
+            hour12: true
+          });
+          const formattedBookingEnd = localBookingEnd.toLocaleTimeString('en-AU', { 
+            hour: 'numeric', 
+            minute: 'numeric',
+            hour12: true
+          });
+          
+          return `Simulator ${booking.simulator_id}: ${formattedBookingStart} - ${formattedBookingEnd}`;
+        }).join(', ');
+        
         console.log('All simulators booked time check:', {
           originalTime: startDate.toLocaleTimeString(),
           localTime: formattedTime,
           originalDate: startDate.toLocaleDateString(),
-          localDate: formattedDate
+          localDate: formattedDate,
+          bookedSimulators: bookedSimulatorsInfo
         });
         
         return res.status(400).json({ 
-          error: `All simulators are booked at ${formattedTime} on ${formattedDate}. Please select a different time for your booking.` 
+          error: `All simulators are booked at ${formattedTime} on ${formattedDate}. Booked simulators: ${bookedSimulatorsInfo}. Please select a different time for your booking.` 
         });
       }
 

@@ -248,6 +248,9 @@ curl -X PUT http://localhost:3001/api/user-credits?userId=1 -H "Content-Type: ap
 
 ## Implemented Features
 - Basic booking system with simulator and coach selection
+  - Modular component architecture with separate UI components
+  - Step-based booking flow with clear separation of concerns
+  - Reusable UI components (PillSelector, SessionCard, UnavailableDateCard)
 - Business hours validation with admin interface
 - Special dates/holidays handling
 - Coach availability management

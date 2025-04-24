@@ -3,7 +3,11 @@ import Link from 'next/link'
 import BookingForm from '../components/BookingForm'
 import Head from 'next/head'
 
-export default function Home() {
+interface HomeProps {
+  selectedUserId?: string;
+}
+
+export default function Home({ selectedUserId }: HomeProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <Head>
@@ -24,7 +28,7 @@ export default function Home() {
       
       <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Book a Simulator</h2>
-        <BookingForm onSuccess={() => {}} />
+        <BookingForm onSuccess={() => {}} selectedUserId={selectedUserId} />
       </div>
       
       

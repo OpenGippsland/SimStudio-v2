@@ -91,6 +91,7 @@ The booking system uses the following tables:
 - Valid date formats are required
 - End time must be after start time
 - Bookings are made in hourly increments
+- The service only operates in Melbourne. All times in code, db and server should refelct this to avoid conflics 
 
 ## Recent Improvements
 

@@ -2,6 +2,25 @@
 
 A booking system for simulators and coaching sessions.
 
+## Project Structure
+
+The project follows a modular component architecture for better maintainability:
+
+### Components Organization
+- `components/ui/` - Reusable UI components
+  - `PillSelector.tsx` - Pill selection component
+  - `SessionCard.tsx` - Session card component
+  - `UnavailableDateCard.tsx` - Unavailable date card component
+- `components/booking/` - Booking-specific components
+  - `BookingFormStep1.tsx` - Initial booking options
+  - `BookingFormStep2.tsx` - Session selection
+  - `BookingFormStep3.tsx` - Booking confirmation
+- `components/BookingForm.tsx` - Main orchestrator component
+
+### Utility Files
+- `lib/booking/types.ts` - Shared TypeScript interfaces
+- `lib/booking/utils.ts` - Helper functions for booking logic
+
 ## Database Migration to Supabase
 
 This project has been updated to use Supabase as the database backend instead of SQLite. This change was made to ensure compatibility with Vercel's serverless deployment environment, as SQLite requires a writable filesystem which is not available in serverless functions.

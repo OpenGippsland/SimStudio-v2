@@ -13,8 +13,15 @@ export default function BookingsPage() {
     try {
       const response = await fetch('/api/bookings')
       const data = await response.json()
+      
+      // Filter out past bookings
+      const now = new Date()
+      const futureBookings = data.filter((booking: any) => {
+        return new Date(booking.start_time) > now
+      })
+      
       // Sort bookings by date then time
-      const sortedBookings = data.sort((a: any, b: any) => {
+      const sortedBookings = futureBookings.sort((a: any, b: any) => {
         const dateA = new Date(a.start_time).getTime()
         const dateB = new Date(b.start_time).getTime()
         return dateA - dateB
@@ -106,6 +113,29 @@ export default function BookingsPage() {
   }
 
   const bookingGroups = groupBookingsByDate()
+  
+  // Format date for display in headings
+  const formatDateHeading = (dateString: string) => {
+    // Parse Australian date format (DD/MM/YYYY)
+    const parts = dateString.split('/')
+    if (parts.length !== 3) return dateString
+    
+    // Create date with year, month (0-based), day
+    const date = new Date(
+      parseInt(parts[2]), // year
+      parseInt(parts[1]) - 1, // month (0-based)
+      parseInt(parts[0]) // day
+    )
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return dateString
+    
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -121,7 +151,7 @@ export default function BookingsPage() {
       </div>
       
       <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold text-gray-700">Current Bookings</h2>
+        <h2 className="text-2xl font-semibold text-gray-700">Upcoming Bookings</h2>
         <button 
           onClick={fetchBookings}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
@@ -150,7 +180,7 @@ export default function BookingsPage() {
         <div className="space-y-6">
           {Object.entries(bookingGroups).map(([date, dateBookings]) => (
             <div key={date} className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-medium text-gray-800 mb-3 border-b pb-2">{date}</h3>
+              <h3 className="text-lg font-medium text-gray-800 mb-3 border-b pb-2">{formatDateHeading(date)}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {dateBookings.map(booking => (
                   <div 

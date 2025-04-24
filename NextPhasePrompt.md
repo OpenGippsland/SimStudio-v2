@@ -42,7 +42,10 @@ Based on the current implementation documented in:
 - `pages/api/bookings.ts` (extend with edit/cancel functionality)
 - `pages/api/credits.ts` (new)
 - `components/Calendar.tsx` (new)
-- `components/BookingForm.tsx` (extend with credit validation)
+- `components/BookingForm.tsx` (main orchestrator)
+- `components/booking/BookingFormStep1.tsx` (extend with credit validation)
+- `components/booking/BookingFormStep2.tsx` (extend with calendar integration)
+- `components/booking/BookingFormStep3.tsx` (extend with edit/cancel functionality)
 - `pages/index.tsx` (extend with calendar view)
 - `styles/calendar.css` (new)
 
@@ -68,5 +71,3 @@ Based on the current implementation documented in:
    - Created comprehensive admin interface
    - Added to main navigation
    - Implemented forms for system configuration
-
-

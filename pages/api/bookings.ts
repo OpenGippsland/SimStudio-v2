@@ -57,10 +57,27 @@ export default async function handler(
         return res.status(400).json({ error: 'End time must be after start time' })
       }
 
-      // Check if booking is within business hours
-      // Convert dates to local timezone for business hour checks
-      const localStartDate = new Date(startDate.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-      const localEndDate = new Date(endDate.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+      // Always use Melbourne time for all operations
+      // This ensures consistency and avoids timezone confusion
+      const melbourneStartDate = new Date(startDate.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+      const melbourneEndDate = new Date(endDate.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+      
+      // Create proper date objects with the correct date parts from Melbourne time
+      const localStartDate = new Date(
+        melbourneStartDate.getFullYear(),
+        melbourneStartDate.getMonth(),
+        melbourneStartDate.getDate(),
+        melbourneStartDate.getHours(),
+        melbourneStartDate.getMinutes()
+      );
+      
+      const localEndDate = new Date(
+        melbourneEndDate.getFullYear(),
+        melbourneEndDate.getMonth(),
+        melbourneEndDate.getDate(),
+        melbourneEndDate.getHours(),
+        melbourneEndDate.getMinutes()
+      );
       
       const dayOfWeek = localStartDate.getDay();
       const startHour = localStartDate.getHours();
@@ -124,15 +141,45 @@ export default async function handler(
       // Use the local date for special date checks
       const bookingDate = localStartDate.toISOString().split('T')[0];
       
+      // Double-check that we're using the correct date
+      // This ensures we're checking the date the user actually selected
+      const userSelectedDate = startDate.toISOString().split('T')[0];
+      const melbourneDate = melbourneStartDate.toISOString().split('T')[0];
+      
+      console.log('Date validation check:', {
+        userSelectedDate,  // The date from the user's input
+        melbourneDate,     // The date after Melbourne timezone conversion
+        bookingDate,       // The date we're using for database checks
+        dayOfWeek,
+        dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
+      });
+      
+      // If there's a mismatch between the user's selected date and the date we're checking,
+      // use the user's selected date to avoid timezone confusion
+      let dateToCheck = bookingDate;
+      if (userSelectedDate !== bookingDate) {
+        console.log('Date mismatch detected! Using user selected date instead.');
+        // Use the user's selected date for special date checks
+        // This prevents timezone issues from causing the wrong date to be checked
+        dateToCheck = userSelectedDate;
+      }
+      
       // Check if it's a special date
       const { data: specialDate, error: specialDateError } = await supabase
         .from('special_dates')
-        .select('is_closed, open_hour, close_hour')
-        .eq('date', bookingDate)
+        .select('*')
+        .eq('date', dateToCheck)
         .single();
       
+      console.log('DEBUG - Special date check:', {
+        bookingDate,
+        dateToCheck,
+        specialDate,
+        specialDateError
+      });
+      
       if (specialDate?.is_closed) {
-        const formattedDate = new Date(bookingDate).toLocaleDateString('en-AU', { 
+        const formattedDate = new Date(dateToCheck).toLocaleDateString('en-AU', { 
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
@@ -140,6 +187,7 @@ export default async function handler(
         });
         console.log('Special date closed check:', {
           bookingDate,
+          dateToCheck,
           specialDate,
           formattedDate
         });
@@ -192,6 +240,22 @@ export default async function handler(
 
       // Check coach availability if specific coach is selected
       if (coach && coach !== 'none' && coach !== 'any') {
+        // Get the coach hours from the request body
+        // Default to 2 hours if not specified (common case)
+        const coachHours = req.body.coachHours || 2;
+        
+        // Calculate the coach's time slot within the booking
+        // By default, coaches are needed for the first portion of the session
+        const coachEndHour = startHour + coachHours;
+        
+        console.log('Coach hours check:', {
+          coach,
+          startHour,
+          coachHours,
+          coachEndHour,
+          totalBookingHours: bookingHours
+        });
+        
         // Check if any availability block covers the requested time
         // For coach availability, we need to find blocks where:
         // 1. The coach ID matches
@@ -204,18 +268,18 @@ export default async function handler(
           .eq('day_of_week', dayOfWeek);
         
         // Manually check if any of the coach's availability blocks cover the requested time
-        // We need to check if the coach is available for the entire duration of the booking
+        // We need to check if the coach is available for their portion of the booking
         // Use local hours for coach availability check
         const isCoachAvailable = coachAvailability?.some(block => {
-          // Check if the coach's availability block covers the entire booking duration
-          return block.start_hour <= startHour && block.end_hour >= endHour;
+          // Check if the coach's availability block covers the coach's portion of the booking
+          return block.start_hour <= startHour && block.end_hour >= coachEndHour;
         });
         
         console.log('Coach availability check:', {
           coach,
           dayOfWeek,
           startHour,
-          endHour,
+          coachEndHour,
           coachAvailability,
           isCoachAvailable
         });
@@ -235,20 +299,59 @@ export default async function handler(
           .select('id, start_time, end_time')
           .eq('coach', coach);
         
+        // Calculate the coach's time slot within the booking
+        const coachStartTime = new Date(localStartDate);
+        const coachEndTime = new Date(coachStartTime);
+        coachEndTime.setHours(coachEndTime.getHours() + coachHours);
+        
+        console.log('Coach booking time:', {
+          coachStartTime: coachStartTime.toISOString(),
+          coachEndTime: coachEndTime.toISOString(),
+          coachHours
+        });
+        
         // Manually check for overlapping bookings
         const hasOverlap = existingCoachBookings?.some(existingBooking => {
           const existingStart = new Date(existingBooking.start_time);
           const existingEnd = new Date(existingBooking.end_time);
           
-          // Convert existing booking times to local timezone for comparison
-          const localExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-          const localExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          // Convert existing booking times to Melbourne timezone for comparison
+          const melbourneExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          const melbourneExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
           
-          // Check if there's any overlap between the existing booking and the requested booking
+          // Create proper date objects with the correct date parts from Melbourne time
+          const localExistingStart = new Date(
+            melbourneExistingStart.getFullYear(),
+            melbourneExistingStart.getMonth(),
+            melbourneExistingStart.getDate(),
+            melbourneExistingStart.getHours(),
+            melbourneExistingStart.getMinutes()
+          );
+          
+          const localExistingEnd = new Date(
+            melbourneExistingEnd.getFullYear(),
+            melbourneExistingEnd.getMonth(),
+            melbourneExistingEnd.getDate(),
+            melbourneExistingEnd.getHours(),
+            melbourneExistingEnd.getMinutes()
+          );
+          
+          // Check if there's any overlap between the existing booking and the coach's portion of the session
           // An overlap occurs if:
-          // 1. The start of the new booking is before the end of the existing booking, AND
-          // 2. The end of the new booking is after the start of the existing booking
-          return localStartDate < localExistingEnd && localEndDate > localExistingStart;
+          // 1. The start of the coach's time slot is before the end of the existing booking, AND
+          // 2. The end of the coach's time slot is after the start of the existing booking
+          const hasOverlap = coachStartTime < localExistingEnd && coachEndTime > localExistingStart;
+          
+          if (hasOverlap) {
+            console.log('Found overlapping coach booking:', {
+              existingBookingStart: localExistingStart.toISOString(),
+              existingBookingEnd: localExistingEnd.toISOString(),
+              coachStartTime: coachStartTime.toISOString(),
+              coachEndTime: coachEndTime.toISOString()
+            });
+          }
+          
+          return hasOverlap;
         });
         
         console.log('Coach booking overlap check:', {
@@ -275,9 +378,26 @@ export default async function handler(
             const existingStart = new Date(existingBooking.start_time);
             const existingEnd = new Date(existingBooking.end_time);
             
-            // Convert to local timezone
-            const localExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-            const localExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            // Convert to Melbourne timezone
+            const melbourneExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            const melbourneExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+            
+            // Create proper date objects with the correct date parts from Melbourne time
+            const localExistingStart = new Date(
+              melbourneExistingStart.getFullYear(),
+              melbourneExistingStart.getMonth(),
+              melbourneExistingStart.getDate(),
+              melbourneExistingStart.getHours(),
+              melbourneExistingStart.getMinutes()
+            );
+            
+            const localExistingEnd = new Date(
+              melbourneExistingEnd.getFullYear(),
+              melbourneExistingEnd.getMonth(),
+              melbourneExistingEnd.getDate(),
+              melbourneExistingEnd.getHours(),
+              melbourneExistingEnd.getMinutes()
+            );
             
             return localStartDate < localExistingEnd && localEndDate > localExistingStart;
           });
@@ -287,9 +407,26 @@ export default async function handler(
             const existingStart = new Date(booking.start_time);
             const existingEnd = new Date(booking.end_time);
             
-            // Convert to local timezone
-            const localExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-            const localExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          // Convert to Melbourne timezone
+          const melbourneExistingStart = new Date(existingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          const melbourneExistingEnd = new Date(existingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          
+          // Create proper date objects with the correct date parts from Melbourne time
+          const localExistingStart = new Date(
+            melbourneExistingStart.getFullYear(),
+            melbourneExistingStart.getMonth(),
+            melbourneExistingStart.getDate(),
+            melbourneExistingStart.getHours(),
+            melbourneExistingStart.getMinutes()
+          );
+          
+          const localExistingEnd = new Date(
+            melbourneExistingEnd.getFullYear(),
+            melbourneExistingEnd.getMonth(),
+            melbourneExistingEnd.getDate(),
+            melbourneExistingEnd.getHours(),
+            melbourneExistingEnd.getMinutes()
+          );
             
             const formattedExistingStart = localExistingStart.toLocaleTimeString('en-AU', { 
               hour: 'numeric', 
@@ -330,9 +467,26 @@ export default async function handler(
         const bookingStart = new Date(booking.start_time);
         const bookingEnd = new Date(booking.end_time);
         
-        // Convert to local timezone
-        const localBookingStart = new Date(bookingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-        const localBookingEnd = new Date(bookingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+        // Convert to Melbourne timezone
+        const melbourneBookingStart = new Date(bookingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+        const melbourneBookingEnd = new Date(bookingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+        
+        // Create proper date objects with the correct date parts from Melbourne time
+        const localBookingStart = new Date(
+          melbourneBookingStart.getFullYear(),
+          melbourneBookingStart.getMonth(),
+          melbourneBookingStart.getDate(),
+          melbourneBookingStart.getHours(),
+          melbourneBookingStart.getMinutes()
+        );
+        
+        const localBookingEnd = new Date(
+          melbourneBookingEnd.getFullYear(),
+          melbourneBookingEnd.getMonth(),
+          melbourneBookingEnd.getDate(),
+          melbourneBookingEnd.getHours(),
+          melbourneBookingEnd.getMinutes()
+        );
         
         // Check for overlap in local time
         return localStartDate < localBookingEnd && localEndDate > localBookingStart;
@@ -366,9 +520,26 @@ export default async function handler(
           const bookingStart = new Date(booking.start_time);
           const bookingEnd = new Date(booking.end_time);
           
-          // Convert to local timezone
-          const localBookingStart = new Date(bookingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
-          const localBookingEnd = new Date(bookingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          // Convert to Melbourne timezone
+          const melbourneBookingStart = new Date(bookingStart.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          const melbourneBookingEnd = new Date(bookingEnd.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }));
+          
+          // Create proper date objects with the correct date parts from Melbourne time
+          const localBookingStart = new Date(
+            melbourneBookingStart.getFullYear(),
+            melbourneBookingStart.getMonth(),
+            melbourneBookingStart.getDate(),
+            melbourneBookingStart.getHours(),
+            melbourneBookingStart.getMinutes()
+          );
+          
+          const localBookingEnd = new Date(
+            melbourneBookingEnd.getFullYear(),
+            melbourneBookingEnd.getMonth(),
+            melbourneBookingEnd.getDate(),
+            melbourneBookingEnd.getHours(),
+            melbourneBookingEnd.getMinutes()
+          );
           
           const formattedBookingStart = localBookingStart.toLocaleTimeString('en-AU', { 
             hour: 'numeric', 

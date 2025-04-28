@@ -66,10 +66,10 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">New Booking</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 heading-font">New Booking</h2>
       
       <div className="mb-6">
-        <label className="block text-gray-700 mb-2">Simulator Duration:</label>
+        <label className="block text-gray-700 font-medium mb-3">Simulator Duration:</label>
         <PillSelector
           options={durationOptions}
           selectedValue={formData.hours}
@@ -79,7 +79,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
       </div>
       
       <div className="mb-6">
-        <label className="block text-gray-700 mb-2">Do you want a coach?</label>
+        <label className="block text-gray-700 font-medium mb-3">Do you want a coach?</label>
         <PillSelector
           options={yesNoOptions}
           selectedValue={formData.wantsCoach}
@@ -91,7 +91,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
       {formData.wantsCoach && (
         <>
           <div className="mb-6">
-            <label className="block text-gray-700 mb-2">Select Coach:</label>
+            <label className="block text-gray-700 font-medium mb-3">Select Coach:</label>
             <PillSelector
               options={coachOptions}
               selectedValue={formData.coach}
@@ -101,7 +101,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
           </div>
           
           <div className="mb-6">
-            <label className="block text-gray-700 mb-2">Coach Duration:</label>
+            <label className="block text-gray-700 font-medium mb-3">Coach Duration:</label>
             <PillSelector
               options={coachDurationOptions}
               selectedValue={formData.coachHours}
@@ -113,17 +113,17 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
       )}
       
       {selectedUserCredits !== null && (
-        <div className="mb-6 p-3 bg-blue-50 rounded border border-blue-200">
-          <p className="text-blue-800 font-medium">
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-gray-800 font-medium">
             Available Credits: {selectedUserCredits} hours
           </p>
           {formData.hours > 0 && (
-            <p className="text-sm text-blue-600 mt-1">
+            <p className="text-sm text-gray-600 mt-2">
               This booking will use {formData.hours} {formData.hours === 1 ? 'hour' : 'hours'}
             </p>
           )}
           {selectedUserCredits < formData.hours && (
-            <p className="text-sm text-red-600 mt-1 font-medium">
+            <p className="text-sm text-red-600 mt-2 font-medium">
               Warning: Not enough credits for this booking!
             </p>
           )}
@@ -131,7 +131,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
       )}
       
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
           {error}
         </div>
       )}
@@ -139,9 +139,9 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
       <button
         type="button"
         onClick={handleFindSessions}
-        className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        className="w-full py-3 px-6 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors"
       >
-        Find Available Sessions
+        FIND AVAILABLE SESSIONS
       </button>
     </div>
   );

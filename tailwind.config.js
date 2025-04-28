@@ -5,7 +5,15 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'simstudio-yellow': '#FFC20E',
+        'simstudio-black': '#000000',
+      },
+      fontFamily: {
+        'spantaran': ['Spantaran', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

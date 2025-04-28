@@ -457,10 +457,13 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   };
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="bg-white p-6 rounded-lg shadow-md mb-8">
+    <form onSubmit={(e) => e.preventDefault()} className="bg-white p-8 rounded-lg shadow-md mb-8 border border-gray-100">
       {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <p className="text-gray-600">Loading...</p>
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-simstudio-yellow border-t-transparent mb-4"></div>
+            <p className="text-gray-600">Loading booking system...</p>
+          </div>
         </div>
       ) : (
         renderStep()

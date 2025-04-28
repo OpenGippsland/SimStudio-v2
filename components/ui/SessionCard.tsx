@@ -24,24 +24,24 @@ const SessionCard = ({
   });
 
   return (
-    <div className={`p-3 rounded-lg shadow-sm mb-3 border-l-4 ${
+    <div className={`p-4 rounded-lg shadow-md mb-4 border-l-4 ${
       isAvailable 
-        ? 'bg-white border-blue-500' 
-        : 'bg-red-50 border-red-500'
+        ? 'bg-white border-simstudio-yellow' 
+        : 'bg-red-50 border-red-400'
     }`}>
-      <h3 className="text-base font-semibold text-gray-800 mb-2">{formattedDate}</h3>
+      <h3 className="text-base font-semibold text-gray-800 mb-3">{formattedDate}</h3>
       
       {sessions.length > 0 ? (
         <div>
-          <p className="text-xs text-gray-600 mb-1">Sessions:</p>
-          <div className="grid grid-cols-2 gap-1 w-full">
+          <p className="text-sm text-gray-600 mb-2">Sessions:</p>
+          <div className="grid grid-cols-2 gap-2 w-full">
             {sessions.map((session, index) => {
               // Skip placeholder sessions for closed dates
               if (session.formattedTime === "Not Available") {
                 return (
                   <div 
                     key={index}
-                    className="px-2 py-1 rounded-full text-xs w-full bg-red-100 text-red-700 flex items-center justify-center"
+                    className="px-3 py-2 rounded-lg text-xs w-full bg-red-50 text-red-700 flex items-center justify-center"
                     title={session.unavailableReason}
                   >
                     {session.unavailableReason || "Not available"}
@@ -53,12 +53,12 @@ const SessionCard = ({
                 <button
                   key={index}
                   type="button"
-                  className={`px-2 py-1 rounded-full text-xs transition-colors w-full ${
+                  className={`px-3 py-2 rounded-lg text-xs transition-colors w-full ${
                     selectedSession?.startTime === session.startTime
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-simstudio-yellow text-black font-medium'
                       : session.isAvailable
-                        ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        : 'bg-red-100 text-red-700 cursor-not-allowed'
+                        ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        : 'bg-red-50 text-red-700 cursor-not-allowed'
                   }`}
                   onClick={() => session.isAvailable && onSelectSession(session)}
                   title={session.isAvailable ? undefined : session.unavailableReason}
@@ -71,7 +71,7 @@ const SessionCard = ({
           </div>
         </div>
       ) : (
-        <p className="text-xs text-gray-500">No sessions available</p>
+        <p className="text-sm text-gray-500">No sessions available</p>
       )}
     </div>
   );

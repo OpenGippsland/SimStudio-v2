@@ -28,12 +28,12 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">All Sessions</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 heading-font">Available Sessions</h2>
       
       {/* Top Refine button */}
-      <div className="flex justify-between mb-4">
-        <p className="text-gray-600">
-          {formData.hours} hour{formData.hours !== 1 ? 's' : ''} simulator session
+      <div className="flex justify-between items-center mb-6 bg-gray-50 p-4 rounded-lg">
+        <p className="text-gray-700">
+          <span className="font-medium">Your selection:</span> {formData.hours} hour{formData.hours !== 1 ? 's' : ''} simulator session
           {formData.wantsCoach ? 
             ` with ${formData.coach === 'any' ? 'any' : formData.coach} coach for ${formData.coachHours} hour${formData.coachHours !== 1 ? 's' : ''}` : 
             ' without a coach'
@@ -42,14 +42,14 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="py-1 px-3 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+          className="py-2 px-4 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
         >
-          Refine
+          Change
         </button>
       </div>
       
       {sortedDates.length > 0 ? (
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* All dates in chronological order */}
           {sortedDates.map(([date, sessions]) => {
             // Check if this date has any available sessions
@@ -74,21 +74,21 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
           })}
         </div>
       ) : (
-        <div className="mb-6 p-4 bg-yellow-50 rounded border border-yellow-200">
-          <p className="text-yellow-800">
+        <div className="mb-8 p-6 bg-yellow-50 rounded-lg border border-yellow-200">
+          <p className="text-yellow-800 font-medium">
             No sessions found. Please try different options.
           </p>
         </div>
       )}
       
       {/* Bottom Refine button */}
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-center mt-6">
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="py-2 px-4 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+          className="py-3 px-6 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors"
         >
-          Refine
+          BACK TO OPTIONS
         </button>
       </div>
     </div>

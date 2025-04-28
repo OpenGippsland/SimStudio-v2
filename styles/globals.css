@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font face declaration for Spantaran */
+@font-face {
+  font-family: 'Spantaran';
+  src: url('/assets/Spantaran.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Custom styles */
 .date-closed {
   background-color: #f1f1f1;
@@ -9,4 +18,19 @@
   cursor: not-allowed;
   opacity: 0.7;
   text-decoration: line-through;
+}
+
+/* SimStudio specific styles */
+body {
+  font-family: 'Inter', 'Helvetica', 'Arial', sans-serif;
+}
+
+.carbon-bg {
+  background-image: url('/assets/Carbon Bg.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.heading-font {
+  font-family: 'Spantaran', sans-serif;
 }

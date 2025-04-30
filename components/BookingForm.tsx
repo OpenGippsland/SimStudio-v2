@@ -55,6 +55,74 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
     }
   }, [selectedUserId]);
   
+  // Handle returning from cart/checkout with booking details
+  useEffect(() => {
+    // Check if we're returning from checkout with booking details
+    if (router.query.fromBooking || router.query.fromCheckout) {
+      const { date, time, hours, coach } = router.query;
+      
+      if (date && time) {
+        // Restore form data from URL parameters
+        setFormData(prev => ({
+          ...prev,
+          date: date as string,
+          sessionTime: `${date}T${time}:00`,
+          hours: hours ? parseInt(hours as string) : prev.hours,
+          coach: coach as string || 'none',
+          wantsCoach: coach !== 'none'
+        }));
+        
+        // Fetch available sessions and move to step 3
+        const fetchAndRestoreSession = async () => {
+          try {
+            // Create updated form data
+            const updatedFormData: FormData = {
+              ...formData,
+              date: date as string,
+              hours: hours ? parseInt(hours as string) : formData.hours,
+              coach: coach as string || 'none',
+              wantsCoach: coach !== 'none'
+            };
+            
+            // Generate available sessions
+            const sessions = generateAvailableSessions(
+              businessHours,
+              specialDates,
+              coachAvailability,
+              existingBookings,
+              updatedFormData
+            );
+            
+            setAvailableSessions(sessions);
+            
+            // Find the selected session
+            const dateKey = new Date(date as string).toISOString().split('T')[0];
+            if (sessions[dateKey]) {
+              const timeStr = time as string;
+              const sessionTime = `${date}T${timeStr}:00`;
+              
+              const foundSession = sessions[dateKey].find(
+                session => new Date(session.startTime).toISOString() === new Date(sessionTime).toISOString()
+              );
+              
+              if (foundSession) {
+                setSelectedSession(foundSession);
+                // Move directly to step 3 (confirmation)
+                setStep(3);
+              }
+            }
+          } catch (error) {
+            console.error('Error restoring session:', error);
+          }
+        };
+        
+        if (!loading && businessHours.length > 0 && Object.keys(coachAvailability).length > 0) {
+          fetchAndRestoreSession();
+        }
+      }
+    }
+  }, [router.query, loading, businessHours, specialDates, coachAvailability, existingBookings]);
+  
   const [selectedUserCredits, setSelectedUserCredits] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -234,6 +302,21 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   const handleFindSessions = () => {
     setError('');
     
+    // Check if user is logged in and has enough credits
+    if (formData.userId && selectedUserCredits !== null && selectedUserCredits < formData.hours) {
+      // Redirect to cart page with booking details
+      router.push({
+        pathname: '/cart',
+        query: { 
+          hours: formData.hours,
+          userId: formData.userId,
+          fromBooking: true,
+          message: 'You need to purchase more credits to book this session.'
+        }
+      });
+      return;
+    }
+    
     // Check if coach is selected but no coach availability data exists
     if (formData.wantsCoach && formData.coach !== 'none' && formData.coach !== 'any') {
       const coachData = coachAvailability[formData.coach];
@@ -308,18 +391,11 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         throw new Error('No available simulators for selected time');
       }
 
-      // Check if user is selected (logged in)
+      // Check if user is logged in
       if (!formData.userId) {
-        // If no user is selected, redirect to cart page
-        router.push({
-          pathname: '/cart',
-          query: {
-            hours: formData.hours,
-            date: formData.date,
-            time: new Date(selectedSession.startTime).toTimeString().split(' ')[0].substring(0, 5),
-            coach: formData.wantsCoach ? formData.coach : 'none'
-          }
-        });
+        // Redirect to login page with booking details in URL
+        const time = new Date(selectedSession.startTime).toTimeString().split(' ')[0].substring(0, 5);
+        window.location.href = `/auth/login?redirect=/booking&fromBooking=true&date=${formData.date}&time=${time}&hours=${formData.hours}&coach=${formData.wantsCoach ? formData.coach : 'none'}`;
         return;
       }
       
@@ -386,7 +462,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
 
       setSuccess(true);
       setFormData({
-        userId: '',
+        userId: selectedUserId || '', // Keep the userId
         hours: 1,
         wantsCoach: false,
         coach: 'none',
@@ -409,6 +485,23 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   const sessionDetails = useMemo(() => {
     return formatSessionDetails(selectedSession, formData);
   }, [selectedSession, formData]);
+
+  // Function to reset form state for a new booking
+  const resetFormForNewBooking = () => {
+    setStep(1);
+    setError('');
+    setSuccess(false);
+    setSelectedSession(null);
+    setFormData({
+      userId: selectedUserId || '',
+      hours: 1,
+      wantsCoach: false,
+      coach: 'none',
+      coachHours: 1,
+      date: '',
+      sessionTime: ''
+    });
+  };
 
   // Render the appropriate step
   const renderStep = () => {
@@ -447,7 +540,14 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
             success={success}
             isSubmitting={isSubmitting}
             handleSubmit={handleSubmit}
-            setStep={setStep}
+            setStep={(step) => {
+              // If going back to step 1 after success, reset the form
+              if (step === 1 && success) {
+                resetFormForNewBooking();
+              } else {
+                setStep(step);
+              }
+            }}
           />
         );
         
@@ -455,6 +555,9 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         return null;
     }
   };
+
+  // Check if user is logged in
+  const isLoggedIn = !!formData.userId;
 
   return (
     <form onSubmit={(e) => e.preventDefault()} className="bg-white p-8 rounded-lg shadow-md mb-8 border border-gray-100">
@@ -466,7 +569,42 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
           </div>
         </div>
       ) : (
-        renderStep()
+        <>
+          {/* Only show login warning if user is not logged in and booking is not successful */}
+          {!isLoggedIn && !success && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    <strong>Login required:</strong> You can browse available sessions, but you must be logged in to complete a booking.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Only apply opacity if user is not logged in and booking is not successful */}
+          <div className={!isLoggedIn && !success ? "opacity-70 pointer-events-none" : ""}>
+            {renderStep()}
+          </div>
+          
+          {/* Only show login/register buttons if user is not logged in and booking is not successful */}
+          {!isLoggedIn && !success && (
+            <div className="mt-6 flex justify-center space-x-4">
+              <a href="/auth/login?redirect=/booking" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
+                Sign In
+              </a>
+              <a href="/auth/register?redirect=/booking" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                Create Account
+              </a>
+            </div>
+          )}
+        </>
       )}
     </form>
   );

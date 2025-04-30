@@ -2,34 +2,29 @@ import React, { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
   title?: string;
-  selectedUserId?: string;
-  onUserChange?: (userId: string) => void;
-  users?: any[];
 }
 
 const Layout = ({ 
   children, 
-  title = 'SimStudio - Driver Training & Education',
-  selectedUserId,
-  onUserChange,
-  users = []
+  title = 'SimStudio - Driver Training & Education'
 }: LayoutProps) => {
   const router = useRouter();
+  const { user, authUser, loading, signOut } = useAuth();
   
   // Helper function to determine if a link is active
   const isActive = (path: string) => router.pathname === path;
   
-  // Check if the selected user is an admin
-  const isAdmin = selectedUserId === 'admin';
+  // Check if the user is an admin
+  const isAdmin = user?.email === 'admin@simstudio.com.au';
   
-  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (onUserChange) {
-      onUserChange(e.target.value);
-    }
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
   };
 
   return (
@@ -77,22 +72,32 @@ const Layout = ({
             </Link>
           </div>
           
-          {/* User selection - only show for admin/development */}
+          {/* Authentication buttons */}
           <div className="hidden md:flex items-center mt-2 md:mt-0">
-            <label className="mr-2 text-sm">User:</label>
-            <select
-              value={selectedUserId || ''}
-              onChange={handleUserChange}
-              className="bg-gray-800 text-white text-sm p-1 rounded-md"
-            >
-              <option value="">Guest</option>
-              <option value="admin">Admin User</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.email} ({user.simulator_hours}h)
-                </option>
-              ))}
-            </select>
+            {loading ? (
+              <span className="text-sm">Loading...</span>
+            ) : user ? (
+              <div className="flex items-center">
+                <span className="mr-2 text-sm">
+                  {user.email}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-gray-800 text-white text-sm p-1 rounded-md hover:bg-gray-700"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex space-x-2">
+                <Link href="/auth/login" className="bg-simstudio-yellow text-black text-sm p-1 px-3 rounded-md hover:bg-yellow-400">
+                  Sign In
+                </Link>
+                <Link href="/auth/register" className="bg-gray-800 text-white text-sm p-1 px-3 rounded-md hover:bg-gray-700">
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
           
           {/* Admin Links - only show when admin is selected */}

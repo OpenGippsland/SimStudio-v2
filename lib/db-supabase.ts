@@ -23,7 +23,7 @@ export async function getUserByEmail(email: string) {
   return data || null;
 }
 
-export async function createUser(userData: { email: string, shopify_id?: string }) {
+export async function createUser(userData: { email: string }) {
   const { data, error } = await supabase
     .from('users')
     .insert(userData)

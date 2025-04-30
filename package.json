@@ -8,7 +8,8 @@
     "start": "next start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "node lib/migrateToSupabase.js",
-    "setup-vercel": "node setup-vercel-env.js"
+    "setup-vercel": "node setup-vercel-env.js",
+    "migrate:square": "node lib/migrations/add-square-customer-id.js"
   },
   "keywords": [],
   "author": "",
@@ -23,8 +24,12 @@
     "dotenv": "^16.5.0",
     "marked": "^15.0.8",
     "next": "^15.3.0",
+    "next-auth": "^4.24.11",
+    "nodemailer": "^6.10.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "square": "^42.1.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

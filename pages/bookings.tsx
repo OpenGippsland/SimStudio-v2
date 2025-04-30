@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useAuth } from '../contexts/AuthContext'
+import { useRouter } from 'next/router'
+import AuthGuard from '../components/auth/AuthGuard'
 
 export default function BookingsPage() {
+  const { user } = useAuth()
+  const router = useRouter()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   const fetchBookings = async () => {
+    if (!user) return
+    
     setLoading(true)
     try {
-      const response = await fetch('/api/bookings')
+      const response = await fetch(`/api/bookings?userId=${user.id}`)
       const data = await response.json()
       
       // Filter out past bookings
@@ -35,8 +42,10 @@ export default function BookingsPage() {
   }
 
   useEffect(() => {
-    fetchBookings()
-  }, [])
+    if (user) {
+      fetchBookings()
+    }
+  }, [user])
 
   // Handle booking deletion
   const handleDeleteBooking = async (bookingId: string) => {
@@ -138,10 +147,11 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Head>
-        <title>SimStudio - Bookings</title>
-      </Head>
+    <AuthGuard>
+      <div className="container mx-auto px-4 py-8">
+        <Head>
+          <title>SimStudio - Bookings</title>
+        </Head>
       
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
         <h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Simulator Bookings</h1>
@@ -235,5 +245,6 @@ export default function BookingsPage() {
         </div>
       )}
     </div>
+    </AuthGuard>
   )
 }

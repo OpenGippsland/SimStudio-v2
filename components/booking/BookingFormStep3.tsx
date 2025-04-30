@@ -1,4 +1,6 @@
 import React from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { FormData, Session, SessionDetails } from '../../lib/booking/types';
 
 interface BookingFormStep3Props {
@@ -24,6 +26,29 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
   handleSubmit,
   setStep
 }) => {
+  const router = useRouter();
+  
+  // Function to handle redirection to cart for credit purchase
+  const handlePurchaseCredits = () => {
+    if (!selectedSession || !sessionDetails) return;
+    
+    // Calculate how many credits are needed
+    const creditsNeeded = sessionDetails.hours - (selectedUserCredits || 0);
+    
+    // Redirect to cart with booking details
+    router.push({
+      pathname: '/cart',
+      query: {
+        hours: Math.max(creditsNeeded, 1), // Ensure at least 1 hour
+        userId: formData.userId,
+        date: formData.date,
+        time: formData.sessionTime,
+        coach: formData.coach,
+        fromBooking: true
+      }
+    });
+  };
+  
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6 heading-font">Booking Confirmation</h2>
@@ -96,18 +121,35 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
       )}
       
       <div className="flex justify-between mt-8">
-        <button
-          type="button"
-          onClick={() => setStep(2)}
-          className="py-3 px-6 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          Back
-        </button>
+        {success ? (
+          <a
+            href="/booking"
+            target="_self"
+            rel="noopener noreferrer"
+            className="py-3 px-6 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors inline-block text-center"
+            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+          >
+            CREATE ANOTHER BOOKING
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className="py-3 px-6 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Back
+          </button>
+        )}
         
         {!success && (
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={
+              // If user doesn't have enough credits, redirect to purchase page
+              (selectedUserCredits !== null && selectedUserCredits < (sessionDetails?.hours || 0))
+                ? handlePurchaseCredits
+                : handleSubmit
+            }
             disabled={isSubmitting}
             className={`py-3 px-6 font-bold rounded-lg transition-colors ${
               isSubmitting
@@ -116,8 +158,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
             }`}
           >
             {isSubmitting ? 'Processing...' : 
-              !formData.userId ? 'PURCHASE AND CHECKOUT' : 
-              (selectedUserCredits !== null && selectedUserCredits < formData.hours) ? 'PURCHASE CREDITS AND CHECKOUT' : 
+              (selectedUserCredits !== null && selectedUserCredits < (sessionDetails?.hours || 0)) ? 'PURCHASE CREDITS' : 
               'CONFIRM BOOKING'
             }
           </button>

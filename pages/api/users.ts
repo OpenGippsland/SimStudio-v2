@@ -92,9 +92,19 @@ export default async function handler(
       // Insert new user
       const { data, error } = await supabase
         .from('users')
-        .insert({ email })
+        .insert({ 
+          email,
+          // Store user metadata in Supabase Auth if needed
+          updated_at: new Date().toISOString()
+        })
         .select()
         .single();
+      
+      // If firstName is provided, we can store it in user_metadata via Supabase Auth
+      if (firstName && data) {
+        // This is just for reference - we'd need to use the auth API to update user metadata
+        console.log(`User ${data.id} created with firstName: ${firstName}`);
+      }
       
       if (error) {
         throw error;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useAuth } from '../contexts/AuthContext'
 import CheckoutForm from './CheckoutForm'
 
 interface Package {
@@ -16,6 +17,7 @@ interface BookingDetails {
   date: string;
   time: string;
   coach: string;
+  message?: string;
 }
 
 interface CartProps {
@@ -29,10 +31,24 @@ export default function Cart({ bookingDetails }: CartProps) {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { user, authUser, refreshUser } = useAuth()
   const [userCredits, setUserCredits] = useState(0)
+  const isLoggedIn = !!authUser
   const [showCheckout, setShowCheckout] = useState(false)
   const [creditsNeeded, setCreditsNeeded] = useState(0)
+  const [message, setMessage] = useState('')
+  
+  // Refresh auth state when component mounts
+  useEffect(() => {
+    refreshUser();
+    
+    // Set message if provided in booking details
+    if (bookingDetails.message) {
+      setMessage(bookingDetails.message);
+    } else if (router.query.message) {
+      setMessage(router.query.message as string);
+    }
+  }, [refreshUser, bookingDetails, router.query]);
 
   // Fetch packages on component mount
   useEffect(() => {
@@ -62,13 +78,11 @@ export default function Cart({ bookingDetails }: CartProps) {
     }
 
     const checkUserStatus = async () => {
-      // Check if user ID is provided (user is logged in)
-      if (bookingDetails.userId) {
-        setIsLoggedIn(true)
-        
+      // Check if user is logged in
+      if (isLoggedIn && user) {
         try {
           // Fetch user credits
-          const response = await fetch(`/api/user-credits?userId=${bookingDetails.userId}`)
+          const response = await fetch(`/api/user-credits?userId=${user.id}`)
           if (!response.ok) {
             throw new Error('Failed to fetch user credits')
           }
@@ -81,8 +95,6 @@ export default function Cart({ bookingDetails }: CartProps) {
         } catch (error) {
           console.error('Error fetching user credits:', error)
         }
-      } else {
-        setIsLoggedIn(false)
       }
     }
 
@@ -106,20 +118,28 @@ export default function Cart({ bookingDetails }: CartProps) {
   const handleCheckoutSuccess = (userId: string) => {
     // Redirect back to booking form with user ID if we came from there
     if (bookingDetails.date && bookingDetails.time) {
+      const query: any = {
+        userId,
+        date: bookingDetails.date,
+        time: bookingDetails.time,
+        hours: bookingDetails.hours,
+        coach: bookingDetails.coach
+      };
+      
+      // Add fromBooking flag if we came from the booking form
+      if (router.query.fromBooking) {
+        query.fromBooking = true;
+      } else {
+        query.fromCheckout = true;
+      }
+      
       router.push({
         pathname: '/',
-        query: {
-          userId,
-          date: bookingDetails.date,
-          time: bookingDetails.time,
-          hours: bookingDetails.hours,
-          coach: bookingDetails.coach,
-          fromCheckout: true
-        }
-      })
+        query
+      });
     } else {
       // Otherwise go to packages page
-      router.push('/packages')
+      router.push('/packages');
     }
   }
 
@@ -147,6 +167,28 @@ export default function Cart({ bookingDetails }: CartProps) {
       {!showCheckout ? (
         <>
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Select Package</h2>
+          
+          {/* Display message from booking form if available */}
+          {message && (
+            <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-200">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd"></path>
+                </svg>
+                <p className="font-medium">{message}</p>
+              </div>
+              {router.query.fromBooking && (
+                <div className="mt-4 flex justify-end">
+                  <button 
+                    onClick={() => router.push('/booking')}
+                    className="px-4 py-2 bg-simstudio-yellow text-black rounded-lg hover:bg-yellow-500 transition-colors"
+                  >
+                    Return to Booking
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           
           {isLoggedIn && (
             <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
@@ -227,9 +269,10 @@ export default function Cart({ bookingDetails }: CartProps) {
         <CheckoutForm 
           totalPrice={totalPrice} 
           totalHours={totalHours} 
-          userId={bookingDetails.userId}
+          userId={user ? user.id.toString() : bookingDetails.userId}
           isLoggedIn={isLoggedIn}
           onSuccess={handleCheckoutSuccess}
+          fromBooking={router.query.fromBooking === 'true'}
         />
       )}
     </div>

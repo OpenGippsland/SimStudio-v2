@@ -112,23 +112,34 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
         </>
       )}
       
-      {selectedUserCredits !== null && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-gray-800 font-medium">
-            Available Credits: {selectedUserCredits} hours
-          </p>
-          {formData.hours > 0 && (
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        {selectedUserCredits !== null ? (
+          <>
+            <p className="text-gray-800 font-medium">
+              Available Credits: {selectedUserCredits} hours
+            </p>
+            {formData.hours > 0 && (
+              <p className="text-sm text-gray-600 mt-2">
+                This booking will use {formData.hours} {formData.hours === 1 ? 'hour' : 'hours'}
+              </p>
+            )}
+            {selectedUserCredits < formData.hours && (
+              <p className="text-sm text-red-600 mt-2 font-medium">
+                Warning: Not enough credits for this booking!
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-gray-800 font-medium">
+              Guest Booking
+            </p>
             <p className="text-sm text-gray-600 mt-2">
-              This booking will use {formData.hours} {formData.hours === 1 ? 'hour' : 'hours'}
+              You'll need to purchase {formData.hours} {formData.hours === 1 ? 'hour' : 'hours'} during checkout.
             </p>
-          )}
-          {selectedUserCredits < formData.hours && (
-            <p className="text-sm text-red-600 mt-2 font-medium">
-              Warning: Not enough credits for this booking!
-            </p>
-          )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
       
       {error && (
         <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
@@ -141,7 +152,9 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
         onClick={handleFindSessions}
         className="w-full py-3 px-6 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors"
       >
-        FIND AVAILABLE SESSIONS
+        {selectedUserCredits !== null && selectedUserCredits < formData.hours 
+          ? "PURCHASE CREDITS" 
+          : "FIND AVAILABLE SESSIONS"}
       </button>
     </div>
   );

@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import BookingForm from '../components/BookingForm';
-import UserSelector from '../components/UserSelector';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
+import { useSession } from 'next-auth/react';
 
-interface BookingPageProps {
-  selectedUserId?: string;
-}
-
-export default function BookingPage({ selectedUserId: initialUserId }: BookingPageProps) {
-  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(initialUserId);
-
-  const handleUserSelect = (userId: string) => {
-    setSelectedUserId(userId);
-  };
+export default function BookingPage() {
+  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated';
 
   return (
     <>
@@ -31,23 +26,54 @@ export default function BookingPage({ selectedUserId: initialUserId }: BookingPa
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            {/* User Selector */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Select User</h2>
-              <UserSelector 
-                selectedUserId={selectedUserId} 
-                onUserSelect={handleUserSelect} 
-              />
-              <p className="text-sm text-gray-500 mt-2">
-                Select a user to book a session. Admin users have access to backend management tools.
-              </p>
-            </div>
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <p className="text-center">Loading user information...</p>
+              </div>
+            ) : (
+              <>
+                {/* User Info or Login Notice */}
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                  {isAuthenticated ? (
+                    <>
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Welcome, {user?.email}</h2>
+                      <p className="text-gray-600 mb-4">
+                        <span className="font-bold">Account ID: {user?.id}</span>
+                      </p>
+                      <div>
+                        <Link href="/bookings" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
+                          Manage My Bookings
+                        </Link>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Login Required</h2>
+                      <p className="text-gray-600 mb-4">
+                        You need to be logged in to complete a booking. You can browse available sessions, but you'll need to sign in to confirm your booking.
+                      </p>
+                      <div className="flex space-x-4">
+                        <Link href="/auth/login?redirect=/booking" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
+                          Sign In
+                        </Link>
+                        <Link href="/auth/register?redirect=/booking" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                          Create Account
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
 
-            {/* Booking Form */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Book a Simulator</h2>
-              <BookingForm onSuccess={() => {}} selectedUserId={selectedUserId} />
-            </div>
+                {/* Booking Form */}
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-6">Book a Simulator</h2>
+                  <BookingForm 
+                    onSuccess={() => {}} 
+                    selectedUserId={user ? user.id.toString() : ''} 
+                  />
+                </div>
+              </>
+            )}
 
             <div className="bg-gray-50 rounded-lg p-6 shadow-md mt-8">
               <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Booking Information</h3>

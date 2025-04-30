@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      temp_users: {
+        Row: {
+          id: number
+          reference_id: string
+          email: string
+          first_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          reference_id: string
+          email: string
+          first_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          reference_id?: string
+          email?: string
+          first_name?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_type: string | null
@@ -187,24 +211,59 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          id: number
+          user_id: string
+          reference_id: string
+          amount: number
+          hours: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          reference_id: string
+          amount: number
+          hours: number
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          reference_id?: string
+          amount?: number
+          hours?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
           email: string | null
           id: number
-          shopify_id: string | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           email?: string | null
           id?: number
-          shopify_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string | null
           id?: number
-          shopify_id?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

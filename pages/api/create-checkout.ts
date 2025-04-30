@@ -1,0 +1,115 @@
+import { NextApiRequest, NextApiResponse } from 'next';
+import { v4 as uuidv4 } from 'uuid';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  try {
+    const { 
+      amount, 
+      userId, 
+      description,
+      fromBooking,
+      totalHours  // Extract totalHours from request body
+    } = req.body;
+    
+    // Parse hours from description if totalHours is not provided
+    let hours = totalHours;
+    if (!hours && description) {
+      const hoursMatch = description.match(/(\d+)\s*hours?/i);
+      if (hoursMatch) {
+        hours = parseInt(hoursMatch[1], 10);
+      }
+    }
+    
+    // Default to 1 hour if we couldn't determine hours
+    if (!hours || isNaN(hours)) {
+      hours = 1;
+    }
+    
+    // Generate reference ID for tracking
+    const referenceId = uuidv4();
+    
+    // Create Square Checkout link
+    const locationId = process.env.SQUARE_LOCATION_ID;
+    const accessToken = process.env.SQUARE_ACCESS_TOKEN;
+    const environment = process.env.SQUARE_ENVIRONMENT || 'sandbox';
+    
+    const baseUrl = environment === 'production' 
+      ? 'https://connect.squareup.com' 
+      : 'https://connect.squareupsandbox.com';
+    
+    // Calculate amount in cents
+    const amountInCents = Math.round(amount * 100);
+    
+    // Create checkout link request
+    const checkoutRequest = {
+      idempotency_key: uuidv4(),
+      location_id: locationId,
+      checkout_options: {
+        redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?ref=${referenceId}${fromBooking ? '&fromBooking=true' : ''}`,
+        merchant_support_email: process.env.MERCHANT_SUPPORT_EMAIL || 'support@simstudio.com',
+        ask_for_shipping_address: false
+      },
+      order: {
+        location_id: locationId,
+        reference_id: referenceId,
+        line_items: [
+          {
+            name: description || `SimStudio Booking - ${hours} hours`,
+            quantity: "1",
+            base_price_money: {
+              amount: amountInCents,
+              currency: "AUD"
+            }
+          }
+        ],
+        metadata: {
+          user_id: userId,
+          is_authenticated: 'true',
+          reference_id: referenceId,
+          hours: hours.toString(),  // Include hours in metadata
+          amount: amount.toString() // Include amount in metadata
+        }
+      }
+    };
+    
+    // Log the request for debugging
+    console.log('Square Checkout Request:', JSON.stringify(checkoutRequest, null, 2));
+    
+    // Call Square API
+    const checkoutResponse = await fetch(`${baseUrl}/v2/online-checkout/payment-links`, {
+      method: 'POST',
+      headers: {
+        'Square-Version': '2023-09-25',
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(checkoutRequest)
+    });
+    
+    const checkoutData = await checkoutResponse.json();
+    
+    // Log the response for debugging
+    console.log('Square Checkout Response:', JSON.stringify(checkoutData, null, 2));
+    
+    if (!checkoutResponse.ok) {
+      throw new Error(checkoutData?.errors?.[0]?.detail || 'Failed to create checkout');
+    }
+    
+    // Return the checkout URL
+    return res.status(200).json({
+      checkoutUrl: checkoutData.payment_link.url,
+      referenceId: referenceId
+    });
+    
+  } catch (error: any) {
+    console.error('Checkout error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to create checkout' });
+  }
+}

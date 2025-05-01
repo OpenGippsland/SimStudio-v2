@@ -172,14 +172,14 @@ export default async function handler(
       // This uses the unique constraint to prevent duplicate processing
       console.log(`[${requestId}] Recording payment to prevent duplicate processing`);
       
-      // Hardcoded mapping for user ID 27 to auth user ID
-      let authUserId = userId;
-      if (userId === '27') {
-        authUserId = '987ffed6-f3de-4961-8079-797a3bb3e860';
-        console.log(`[${requestId}] Using hardcoded auth user ID: ${authUserId} for public user ID: ${userId}`);
-      }
+      // Process user ID for payments and credits tables
+      // Both tables now expect integer user IDs from NextAuth
       
-      // Try to insert the payment record with the auth user ID
+      // Convert user ID to integer if it's a numeric string
+      const numericUserId = /^\d+$/.test(userId) ? parseInt(userId, 10) : userId;
+      console.log(`[${requestId}] Using user ID ${numericUserId} for payment record`);
+      
+      // Try to insert the payment record with the processed user ID
       let paymentInsertError;
       let paymentRecorded = false;
       
@@ -187,7 +187,7 @@ export default async function handler(
         const { data, error } = await supabase
           .from('payments')
           .insert({ 
-            user_id: authUserId, 
+            user_id: numericUserId, 
             reference_id: referenceId,
             amount: totalAmount,
             hours: hours
@@ -227,11 +227,14 @@ export default async function handler(
       // Now that we've successfully recorded the payment, add credits to the user
       console.log(`[${requestId}] Adding ${hours} credits to user ${userId}`);
       
-      // Add credits to existing user - use the original user ID for credits table
+      // Add credits to existing user
+      // Note: The credits table uses numeric user IDs, not UUIDs
+      // We're using the numericUserId we defined earlier
+      
       const { data: currentCredits, error: creditsError } = await supabase
         .from('credits')
         .select('simulator_hours')
-        .eq('user_id', userId)
+        .eq('user_id', numericUserId)
         .single();
       
       if (creditsError && creditsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -248,7 +251,7 @@ export default async function handler(
           .update({ 
             simulator_hours: currentCredits.simulator_hours + hours 
           })
-          .eq('user_id', userId);
+          .eq('user_id', numericUserId);
         
         if (updateError) {
           console.error(`[${requestId}] Error updating credits:`, updateError);
@@ -263,7 +266,7 @@ export default async function handler(
         const { error: insertError } = await supabase
           .from('credits')
           .insert({ 
-            user_id: userId, 
+            user_id: numericUserId, 
             simulator_hours: hours 
           });
         

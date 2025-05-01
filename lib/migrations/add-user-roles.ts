@@ -4,23 +4,50 @@ export async function addUserRoles() {
   console.log('Adding name, is_coach, and is_admin columns to users table...');
   
   // Check if columns already exist
-  const { data: columns, error: checkError } = await supabase
-    .from('users')
-    .select('name')
-    .limit(1)
-    .catch(() => ({ data: null, error: { message: 'Column does not exist' } }));
+  let columns;
+  let checkError;
+  
+  try {
+    const result = await supabase
+      .from('users')
+      .select('name')
+      .limit(1);
+    
+    columns = result.data;
+    checkError = result.error;
+  } catch (error) {
+    columns = null;
+    checkError = { message: 'Column does not exist' };
+  }
   
   if (columns) {
     console.log('Columns already exist, skipping migration');
     return;
   }
   
-  // Add name column
-  const { error: nameError } = await supabase.rpc('create_user_roles_columns');
+  // Execute SQL to add columns
+  const { error: sqlError } = await supabase.from('users').select('id').limit(1).then(async () => {
+    // Add name column
+    await (supabase.rpc as any)('execute_sql', {
+      sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT'
+    });
+    
+    // Add is_coach column
+    await (supabase.rpc as any)('execute_sql', {
+      sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_coach BOOLEAN DEFAULT FALSE'
+    });
+    
+    // Add is_admin column
+    await (supabase.rpc as any)('execute_sql', {
+      sql: 'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE'
+    });
+    
+    return { error: null };
+  });
   
-  if (nameError) {
-    console.error('Error adding columns:', nameError);
-    throw nameError;
+  if (sqlError) {
+    console.error('Error adding columns:', sqlError);
+    throw sqlError;
   }
   
   console.log('Successfully added name, is_coach, and is_admin columns to users table');

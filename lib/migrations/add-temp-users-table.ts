@@ -1,29 +1,57 @@
 import { supabase } from '../supabase';
 
 export async function addTempUsersTable() {
-  // Create the temp_users table if it doesn't exist
-  const { error } = await supabase.from('temp_users').select('id').limit(1).catch(() => {
-    // If the table doesn't exist, create it
-    return supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        throw new Error('Not authenticated');
-      }
-      
-      // Use service role client to create table
-      return supabase.from('_migrations').insert({
-        name: 'add_temp_users_table',
-        executed_at: new Date().toISOString(),
-        hash: 'manual'
-      });
-    });
-  });
+  // Check if the temp_users table exists
+  const { data, error } = await supabase.from('temp_users').select('id').limit(1);
   
+  // If there's an error (likely because the table doesn't exist)
   if (error) {
-    console.error('Migration error:', error);
-    throw error;
+    console.error('Error accessing temp_users table:', error);
+    console.log(`
+    The temp_users table might not exist. Please run the following SQL in the Supabase SQL Editor:
+    
+    CREATE TABLE IF NOT EXISTS public.temp_users (
+      id SERIAL PRIMARY KEY,
+      reference_id UUID NOT NULL UNIQUE,
+      email TEXT NOT NULL,
+      first_name TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    
+    -- Add appropriate permissions
+    ALTER TABLE public.temp_users ENABLE ROW LEVEL SECURITY;
+    
+    -- Create policies
+    CREATE POLICY "Allow authenticated users to select temp_users"
+      ON public.temp_users
+      FOR SELECT
+      TO authenticated
+      USING (true);
+    
+    CREATE POLICY "Allow authenticated users to insert temp_users"
+      ON public.temp_users
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (true);
+    
+    CREATE POLICY "Allow authenticated users to update their own temp_users"
+      ON public.temp_users
+      FOR UPDATE
+      TO authenticated
+      USING (true);
+    
+    CREATE POLICY "Allow authenticated users to delete their own temp_users"
+      ON public.temp_users
+      FOR DELETE
+      TO authenticated
+      USING (true);
+    `);
+    
+    throw new Error('temp_users table does not exist. Please run the SQL above in the Supabase SQL Editor.');
   }
   
-  console.log('Successfully added temp_users table');
+  console.log('temp_users table exists');
+  return true;
 }
 
 // Execute if this file is run directly

@@ -4,7 +4,7 @@ export async function addPaymentsTable() {
   console.log('Creating payments table...');
   
   // Create the payments table
-  const { error: createTableError } = await supabase.rpc('create_payments_table');
+  const { error: createTableError } = await supabase.rpc('create_payments_table' as any);
   
   if (createTableError) {
     console.error('Error creating payments table:', createTableError);

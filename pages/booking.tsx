@@ -91,11 +91,11 @@ export default function BookingPage() {
                         </div>
                       ) : null}
                       
-                      <div className="flex space-x-4">
-                        <Link href="/my-account" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
+                      <div className="flex space-x-4 justify-center">
+                        <Link href="/my-account" className="px-4 py-2 border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
                           Manage My Bookings
                         </Link>
-                        <Link href="/packages" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                        <Link href="/packages" className="px-4 py-2 border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
                           Add Credits
                         </Link>
                       </div>
@@ -106,11 +106,11 @@ export default function BookingPage() {
                       <p className="text-gray-600 mb-4">
                         You need to be logged in to complete a booking. You can browse available sessions, but you'll need to sign in to confirm your booking.
                       </p>
-                      <div className="flex space-x-4">
-                        <Link href="/auth/login?redirect=/booking" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
+                      <div className="flex space-x-4 justify-center">
+                        <Link href="/auth/login?redirect=/booking" className="px-4 py-2 border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
                           Sign In
                         </Link>
-                        <Link href="/auth/register?redirect=/booking" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                        <Link href="/auth/register?redirect=/booking" className="px-4 py-2 border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
                           Create Account
                         </Link>
                       </div>
@@ -159,11 +159,6 @@ export default function BookingPage() {
               </ul>
             </div>
 
-            <div className="text-center mt-8">
-              <Link href="/packages" className="inline-block bg-simstudio-yellow hover:bg-yellow-500 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
-                BUY SIMULATOR HOURS
-              </Link>
-            </div>
           </div>
         </div>
       </section>

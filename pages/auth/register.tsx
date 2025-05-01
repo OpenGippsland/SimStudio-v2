@@ -45,7 +45,7 @@ export default function Register() {
         ? String(redirect)
         : localStorage.getItem('redirectTo') 
           ? localStorage.getItem('redirectTo')! 
-          : '/';
+          : '/booking';
       
       // Clean up redirectTo if it was used
       if (localStorage.getItem('redirectTo')) {
@@ -64,7 +64,7 @@ export default function Register() {
         ? String(redirect)
         : localStorage.getItem('redirectTo') 
           ? localStorage.getItem('redirectTo')! 
-          : '/';
+          : '/booking';
       
       // Clean up redirectTo if it was used
       if (localStorage.getItem('redirectTo')) {
@@ -102,7 +102,7 @@ export default function Register() {
         ? String(redirect)
         : localStorage.getItem('redirectTo') 
           ? localStorage.getItem('redirectTo')! 
-          : '/';
+          : '/booking';
       
       console.log('Using callback URL:', callbackUrl);
       
@@ -276,7 +276,7 @@ export default function Register() {
                     ? String(redirect)
                     : localStorage.getItem('redirectTo') 
                       ? localStorage.getItem('redirectTo')! 
-                      : '/';
+                      : '/booking';
                   
                   // Use NextAuth's signIn method with email provider
                   const result = await signIn('email', {

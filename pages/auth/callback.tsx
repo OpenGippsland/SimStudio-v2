@@ -22,7 +22,7 @@ export default function AuthCallback() {
         // Check if there's a redirect parameter in the URL
         const params = new URLSearchParams(window.location.search);
         const redirectTo = params.get('redirectTo');
-        setRedirectUrl(redirectTo || '/');
+        setRedirectUrl(redirectTo || '/booking');
         
         // Get the URL hash if it exists
         const hash = window.location.hash;
@@ -46,7 +46,7 @@ export default function AuthCallback() {
         if (session) {
           // Successfully authenticated, redirect
           clearTimeout(timeoutId);
-          router.push(redirectTo || '/');
+          router.push(redirectTo || '/booking');
         } else {
           // No session found, show error
           setError('No authentication session found. Please try logging in again.');

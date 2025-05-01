@@ -11,6 +11,7 @@ export default function BookingPage() {
   const isAuthenticated = status === 'authenticated';
   const [credits, setCredits] = useState<{ simulator_hours: number, coaching_sessions: number } | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('booking');
 
   // Fetch user credits
   const fetchCredits = async () => {
@@ -44,6 +45,10 @@ export default function BookingPage() {
 
   return (
     <>
+      <Head>
+        <title>Book a Session | SimStudio</title>
+      </Head>
+      
       {/* Page Header */}
       <div className="carbon-bg text-white py-12">
         <div className="container mx-auto px-4 text-center">
@@ -118,47 +123,107 @@ export default function BookingPage() {
                   )}
                 </div>
 
-                {/* Booking Form */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-6">Book a Simulator</h2>
-                  <BookingForm 
-                    onSuccess={() => {}} 
-                    selectedUserId={user ? user.id.toString() : ''} 
-                  />
+                {/* Tab Navigation */}
+                <div className="mb-6 border-b border-gray-200">
+                  <nav className="flex space-x-8">
+                    <button
+                      onClick={() => setActiveTab('booking')}
+                      className={`py-4 px-1 font-medium text-sm border-b-2 ${
+                        activeTab === 'booking'
+                          ? 'border-simstudio-yellow text-simstudio-yellow'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Book a Session
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('info')}
+                      className={`py-4 px-1 font-medium text-sm border-b-2 ${
+                        activeTab === 'info'
+                          ? 'border-simstudio-yellow text-simstudio-yellow'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Booking Information
+                    </button>
+                  </nav>
                 </div>
+
+                {/* Tab Content */}
+                {activeTab === 'booking' && (
+                  <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6">Book a Simulator</h2>
+                    <BookingForm 
+                      onSuccess={() => {}} 
+                      selectedUserId={user ? user.id.toString() : ''} 
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'info' && (
+                  <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6">Booking Information</h2>
+                    <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+                      <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Important Details</h3>
+                      <ul className="space-y-3">
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Sessions can be booked in 1-hour increments</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Optional coaching is available with our professional instructors</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Cancellations must be made at least 24 hours in advance</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Please arrive 15 minutes before your scheduled session</span>
+                        </li>
+                      </ul>
+
+                      <h3 className="text-xl font-bold mb-4 mt-8 text-simstudio-yellow">Simulator Features</h3>
+                      <ul className="space-y-3">
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Professional-grade racing simulators with motion platforms</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Multiple track configurations and vehicle options</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Performance analytics and lap time tracking</span>
+                        </li>
+                        <li className="flex items-start">
+                          <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          <span>Realistic force feedback and immersive audio</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </>
             )}
-
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md mt-8">
-              <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Booking Information</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span>Sessions can be booked in 1-hour increments</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span>Optional coaching is available with our professional instructors</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span>Cancellations must be made at least 24 hours in advance</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-simstudio-yellow mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span>Please arrive 15 minutes before your scheduled session</span>
-                </li>
-              </ul>
-            </div>
-
           </div>
         </div>
       </section>

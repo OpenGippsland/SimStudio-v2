@@ -147,7 +147,7 @@ export default function UserCreditsManager() {
         
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+          className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg"
         >
           Update Credits
         </button>

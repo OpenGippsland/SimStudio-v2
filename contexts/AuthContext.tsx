@@ -8,6 +8,9 @@ interface SimStudioUser {
   email: string;
   created_at: string | null;
   updated_at: string | null;
+  name: string | null;
+  is_coach: boolean | null;
+  is_admin: boolean | null;
 }
 
 interface NextAuthUser {

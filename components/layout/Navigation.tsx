@@ -10,8 +10,10 @@ const Navigation = () => {
   // Helper function to determine if a link is active
   const isActive = (path: string) => router.pathname === path;
   
-  // Check if the user is an admin
-  const isAdmin = user?.email === 'admin@simstudio.com.au';
+  // Check if the user is an admin or coach
+  const isAdmin = user?.is_admin === true;
+  const isCoach = user?.is_coach === true;
+  const shouldRedirectToAdmin = isAdmin || isCoach;
   
   const handleSignOut = async () => {
     await signOut();
@@ -69,8 +71,8 @@ const Navigation = () => {
               <span className="text-sm">Loading...</span>
             ) : user ? (
               <div className="flex items-center space-x-2">
-                <Link href="/my-account" className="bg-simstudio-yellow text-black text-sm p-1 px-3 rounded-md hover:bg-yellow-400">
-                  My Account
+                <Link href={shouldRedirectToAdmin ? "/admin" : "/my-account"} className="bg-simstudio-yellow text-black text-sm p-1 px-3 rounded-md hover:bg-yellow-400">
+                  {shouldRedirectToAdmin ? "Admin" : "My Account"}
                 </Link>
                 <button
                   onClick={handleSignOut}
@@ -91,34 +93,7 @@ const Navigation = () => {
             )}
           </div>
           
-          {/* Admin Links - only show when admin is selected */}
-          {isAdmin && (
-            <div className="hidden lg:block absolute top-16 right-4 bg-gray-800 p-3 rounded-md shadow-lg z-10">
-              <h3 className="text-simstudio-yellow font-bold mb-2 text-sm">Admin Links</h3>
-              <ul className="space-y-1">
-                <li>
-                  <Link href="/admin" className="text-white hover:text-simstudio-yellow text-sm block py-1">
-                    Admin Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/bookings" className="text-white hover:text-simstudio-yellow text-sm block py-1">
-                    Manage Bookings
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/coach-availability" className="text-white hover:text-simstudio-yellow text-sm block py-1">
-                    Coach Availability
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/packages" className="text-white hover:text-simstudio-yellow text-sm block py-1">
-                    Manage Packages
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          )}
+          {/* Admin Links section removed as requested */}
         </div>
         
         {/* Checkbox for mobile menu toggle */}
@@ -151,8 +126,8 @@ const Navigation = () => {
               <span className="text-base px-5 py-3 text-gray-800">Loading...</span>
             ) : user ? (
               <div className="flex flex-col items-center space-y-4 mt-4 w-full">
-                <Link href="/my-account" className="w-full bg-simstudio-yellow text-black text-base py-3 px-5 rounded-md hover:bg-yellow-400 text-center">
-                  My Account
+                <Link href={shouldRedirectToAdmin ? "/admin" : "/my-account"} className="w-full bg-simstudio-yellow text-black text-base py-3 px-5 rounded-md hover:bg-yellow-400 text-center">
+                  {shouldRedirectToAdmin ? "Admin" : "My Account"}
                 </Link>
                 <button
                   onClick={handleSignOut}

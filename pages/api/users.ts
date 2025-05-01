@@ -1,11 +1,24 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { supabase } from '../../lib/supabase'
 
+// Define extended user type with optional fields
+interface ExtendedUser {
+  id: number;
+  email: string;
+  name?: string;
+  is_coach?: boolean;
+  is_admin?: boolean;
+  credits?: {
+    simulator_hours: number;
+  };
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
+    // GET - Fetch users
     if (req.method === 'GET') {
       // If email is provided, get specific user
       if (req.query.email) {
@@ -14,12 +27,15 @@ export default async function handler(
           return res.status(400).json({ error: 'Email query parameter must be a string' })
         }
 
-        // Get user with credits
+        // Get user with credits and role fields
         const { data: users, error } = await supabase
           .from('users')
           .select(`
             id, 
-            email, 
+            email,
+            name,
+            is_coach,
+            is_admin,
             credits (
               simulator_hours
             )
@@ -36,22 +52,74 @@ export default async function handler(
         }
         
         // Format the response to match the expected structure
-        const formattedUsers = users.map(user => ({
-          id: user.id,
-          email: user.email,
-          simulator_hours: user.credits?.simulator_hours || 0
-        }));
+        const formattedUsers = users.map(user => {
+          const extendedUser = user as unknown as ExtendedUser;
+          return {
+            id: extendedUser.id,
+            email: extendedUser.email,
+            name: extendedUser.name || '',
+            is_coach: extendedUser.is_coach || false,
+            is_admin: extendedUser.is_admin || false,
+            simulator_hours: extendedUser.credits?.simulator_hours || 0
+          };
+        });
         
         return res.status(200).json(formattedUsers)
       } 
+      // If ID is provided, get specific user
+      else if (req.query.id) {
+        const { id } = req.query
+        if (typeof id !== 'string') {
+          return res.status(400).json({ error: 'ID query parameter must be a string' })
+        }
+
+        // Get user with credits and role fields
+        const { data: user, error } = await supabase
+          .from('users')
+          .select(`
+            id, 
+            email,
+            name,
+            is_coach,
+            is_admin,
+            credits (
+              simulator_hours
+            )
+          `)
+          .eq('id', parseInt(id))
+          .single();
+        
+        if (error) {
+          if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'User not found' })
+          }
+          throw error;
+        }
+        
+        // Format the response
+        const extendedUser = user as unknown as ExtendedUser;
+        const formattedUser = {
+          id: extendedUser.id,
+          email: extendedUser.email,
+          name: extendedUser.name || '',
+          is_coach: extendedUser.is_coach || false,
+          is_admin: extendedUser.is_admin || false,
+          simulator_hours: extendedUser.credits?.simulator_hours || 0
+        };
+        
+        return res.status(200).json(formattedUser)
+      }
       // Otherwise, get all users
       else {
-        // Get all users with credits
+        // Get all users with credits and role fields
         const { data: users, error } = await supabase
           .from('users')
           .select(`
             id, 
-            email, 
+            email,
+            name,
+            is_coach,
+            is_admin,
             credits (
               simulator_hours
             )
@@ -62,17 +130,24 @@ export default async function handler(
         }
         
         // Format the response to match the expected structure
-        const formattedUsers = users.map(user => ({
-          id: user.id,
-          email: user.email,
-          simulator_hours: user.credits?.simulator_hours || 0
-        }));
+        const formattedUsers = users.map(user => {
+          const extendedUser = user as unknown as ExtendedUser;
+          return {
+            id: extendedUser.id,
+            email: extendedUser.email,
+            name: extendedUser.name || '',
+            is_coach: extendedUser.is_coach || false,
+            is_admin: extendedUser.is_admin || false,
+            simulator_hours: extendedUser.credits?.simulator_hours || 0
+          };
+        });
         
         return res.status(200).json(formattedUsers)
       }
     }
+    // POST - Create a new user
     else if (req.method === 'POST') {
-      const { email, firstName } = req.body
+      const { email, firstName, lastName } = req.body
       if (!email) {
         return res.status(400).json({ error: 'Email is required' })
       }
@@ -89,22 +164,21 @@ export default async function handler(
         return res.status(200).json({ id: existingUser.id, message: 'User already exists' })
       }
 
+      // Construct name if firstName and/or lastName are provided
+      let name = null;
+      if (firstName || lastName) {
+        name = [firstName, lastName].filter(Boolean).join(' ');
+      }
+
       // Insert new user
       const { data, error } = await supabase
         .from('users')
         .insert({ 
           email,
-          // Store user metadata in Supabase Auth if needed
           updated_at: new Date().toISOString()
         })
         .select()
         .single();
-      
-      // If firstName is provided, we can store it in user_metadata via Supabase Auth
-      if (firstName && data) {
-        // This is just for reference - we'd need to use the auth API to update user metadata
-        console.log(`User ${data.id} created with firstName: ${firstName}`);
-      }
       
       if (error) {
         throw error;
@@ -112,8 +186,75 @@ export default async function handler(
       
       return res.status(201).json({ id: data.id })
     }
+    // PUT - Update a user
+    else if (req.method === 'PUT') {
+      const { id } = req.query
+      const { name, is_coach, is_admin } = req.body
+      
+      if (!id || typeof id !== 'string') {
+        return res.status(400).json({ error: 'User ID is required' })
+      }
+
+      // First check if the columns exist
+      let columnsExist = true;
+      try {
+        await supabase
+          .from('users')
+          .select('name')
+          .limit(1);
+      } catch (error) {
+        columnsExist = false;
+      }
+
+      // If columns don't exist, return a specific error
+      if (!columnsExist) {
+        return res.status(400).json({ 
+          error: 'User columns not set up. Please run the migration first.',
+          needsMigration: true
+        });
+      }
+
+      // Update user
+      const { data, error } = await supabase
+        .from('users')
+        .update({ 
+          name,
+          is_coach,
+          is_admin,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', parseInt(id))
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return res.status(200).json(data)
+    }
+    // DELETE - Delete a user
+    else if (req.method === 'DELETE') {
+      const { id } = req.query
+      
+      if (!id || typeof id !== 'string') {
+        return res.status(400).json({ error: 'User ID is required' })
+      }
+
+      // Delete user
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', parseInt(id));
+      
+      if (error) {
+        throw error;
+      }
+      
+      return res.status(200).json({ message: 'User deleted successfully' })
+    }
     else {
-      res.setHeader('Allow', ['GET', 'POST'])
+      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE'])
       return res.status(405).end(`Method ${req.method} Not Allowed`)
     }
   } catch (error) {

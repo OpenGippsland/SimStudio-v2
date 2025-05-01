@@ -151,7 +151,7 @@ export default function PackageManager() {
                   <td className="p-2 flex space-x-2">
                     <button
                       onClick={() => handleEdit(pkg)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-simstudio-yellow hover:text-yellow-600"
                     >
                       Edit
                     </button>
@@ -234,7 +234,7 @@ export default function PackageManager() {
         <div className="flex space-x-2">
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+            className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg"
           >
             {editingId ? 'Update Package' : 'Add Package'}
           </button>

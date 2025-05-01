@@ -1,4 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
+import { useAuth } from '../contexts/AuthContext'
 import Link from 'next/link'
 import Head from 'next/head'
 import PackageManager from '../components/PackageManager'
@@ -12,7 +14,33 @@ import UserManager from '../components/admin/UserManager'
 // Main Admin Page
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('bookings')
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  
+  // Check if user has admin or coach role
+  useEffect(() => {
+    if (user && !(user.is_admin || user.is_coach)) {
+      // Redirect unauthorized users to home page
+      router.push('/')
+    }
+  }, [user, router])
 
+  // Show loading state or nothing while checking permissions
+  if (loading || !user) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    )
+  }
+  
+  // If user is not admin or coach, don't render anything (will be redirected)
+  if (!(user.is_admin || user.is_coach)) {
+    return null
+  }
+
+  // Only render admin content if user has proper permissions
   return (
     <>
       <Head>

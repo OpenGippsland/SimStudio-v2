@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import BookingForm from '../components/BookingForm';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -6,9 +6,41 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSession } from 'next-auth/react';
 
 export default function BookingPage() {
-  const { user, loading } = useAuth();
+  const { user, authUser, loading } = useAuth();
   const { data: session, status } = useSession();
   const isAuthenticated = status === 'authenticated';
+  const [credits, setCredits] = useState<{ simulator_hours: number, coaching_sessions: number } | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
+
+  // Fetch user credits
+  const fetchCredits = async () => {
+    if (!user) return;
+    
+    setCreditsLoading(true);
+    try {
+      const response = await fetch(`/api/user-credits?userId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCredits({
+          simulator_hours: data.simulator_hours || 0,
+          coaching_sessions: data.coaching_sessions || 0
+        });
+      } else {
+        console.error('Failed to fetch user credits');
+      }
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+    } finally {
+      setCreditsLoading(false);
+    }
+  };
+
+  // Fetch credits when user is loaded
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      fetchCredits();
+    }
+  }, [user, isAuthenticated]);
 
   return (
     <>
@@ -36,13 +68,35 @@ export default function BookingPage() {
                 <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                   {isAuthenticated ? (
                     <>
-                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Welcome, {user?.email}</h2>
-                      <p className="text-gray-600 mb-4">
-                        <span className="font-bold">Account ID: {user?.id}</span>
-                      </p>
-                      <div>
-                        <Link href="/bookings" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
+                      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Welcome, {authUser?.name || user?.email}</h2>
+                      
+                      {/* Credits Information */}
+                      {creditsLoading ? (
+                        <p className="text-gray-500 mb-4">Loading credits...</p>
+                      ) : credits ? (
+                        <div className="mb-4 grid grid-cols-2 gap-4">
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <p className="text-gray-600 text-sm mb-1">Simulator Hours</p>
+                            <p className="text-xl font-bold text-simstudio-yellow">
+                              {credits.simulator_hours}
+                            </p>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <p className="text-gray-600 text-sm mb-1">Coaching Sessions</p>
+                            <p className="text-xl font-bold text-simstudio-yellow">
+                              {credits.coaching_sessions}
+                            </p>
+                          </div>
+                        </div>
+                      ) : null}
+                      
+                      <div className="flex space-x-4">
+                        <Link href="/my-account" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
                           Manage My Bookings
+                        </Link>
+                        <Link href="/packages" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
+                          Add Credits
                         </Link>
                       </div>
                     </>

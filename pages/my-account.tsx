@@ -5,13 +5,22 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthGuard from '../components/auth/AuthGuard';
 
 const MyAccountPage = () => {
-  const { user } = useAuth();
+  const { user, authUser, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('bookings');
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [credits, setCredits] = useState<{ simulator_hours: number, coaching_sessions: number } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: ''
+  });
+  const [updateLoading, setUpdateLoading] = useState(false);
 
+  // Fetch user bookings
   const fetchBookings = async () => {
     if (!user) return;
     
@@ -40,11 +49,39 @@ const MyAccountPage = () => {
     }
   };
 
+  // Fetch user credits
+  const fetchCredits = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/user-credits?userId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCredits({
+          simulator_hours: data.simulator_hours || 0,
+          coaching_sessions: data.coaching_sessions || 0
+        });
+      } else {
+        console.error('Failed to fetch user credits');
+      }
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchBookings();
+      fetchCredits();
+      
+      // Initialize form data with user info
+      setFormData({
+        firstName: authUser?.name?.split(' ')[0] || '',
+        lastName: authUser?.name?.split(' ')[1] || '',
+        email: user.email || ''
+      });
     }
-  }, [user]);
+  }, [user, authUser]);
 
   // Handle booking deletion
   const handleDeleteBooking = async (bookingId: string) => {
@@ -269,34 +306,28 @@ const MyAccountPage = () => {
                       {dateBookings.map(booking => (
                         <div 
                           key={booking.id}
-                          className="bg-gray-50 rounded-lg shadow-md overflow-hidden transform transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-l-4 border-simstudio-yellow"
+                          className="relative bg-white overflow-hidden transform transition-all duration-200 border-2 border-simstudio-yellow"
+                          style={{
+                            borderTopLeftRadius: '38px',
+                            borderBottomRightRadius: '38px'
+                          }}
                         >
+                          
                           {/* Card Header with Simulator ID and Duration */}
-                          <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-4 border-b border-gray-200">
+                          <div className="relative p-4 border-b border-gray-200">
                             <div className="flex justify-between items-center">
-                              <div className="flex items-center">
-                                <svg className="w-10 h-10 mr-3 text-gray-700" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M7 7L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M17 7L15 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M7 17L9 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M17 17L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <div>
-                                  <div className="font-semibold text-gray-800">
-                                    Simulator {booking.simulator_id}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    <svg className="w-3.5 h-3.5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    Booking #{booking.id}
-                                  </div>
+                              <div>
+                                <div className="font-semibold text-gray-800">
+                                  Simulator {booking.simulator_id}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  <svg className="w-3.5 h-3.5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                  </svg>
+                                  Booking #{booking.id}
                                 </div>
                               </div>
-                              <div className="bg-white shadow-sm text-gray-700 px-3 py-1.5 rounded-full text-sm font-medium border border-gray-200 flex items-center">
+                              <div className="text-gray-700 px-3 py-1.5 text-sm font-medium flex items-center">
                                 <svg className="w-4 h-4 mr-1 text-simstudio-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -307,23 +338,25 @@ const MyAccountPage = () => {
                           
                           {/* Card Body with Date and Status */}
                           <div className="p-5 bg-white">
-                            <div className="flex items-center justify-between mb-4 text-gray-700 bg-gray-50 p-2 rounded-md border border-gray-200">
-                              <div className="flex items-center">
+                            <div className="mb-4 text-gray-700 p-3">
+                              <div className="flex items-center mb-2">
                                 <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                                 <span>{formatDate(booking.start_time)}</span>
                               </div>
-                              <a 
-                                href={generateCalendarLink(booking)}
-                                download={`simstudio-booking-${booking.id}.ics`}
-                                className="flex items-center text-gray-600 hover:text-gray-800 text-xs font-medium"
-                              >
-                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Add
-                              </a>
+                              <div>
+                                <a 
+                                  href={generateCalendarLink(booking)}
+                                  download={`simstudio-booking-${booking.id}.ics`}
+                                  className="flex items-center text-gray-600 hover:text-gray-800 text-xs font-medium"
+                                >
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  Add to calendar
+                                </a>
+                              </div>
                             </div>
                             
                             <div className="flex flex-col space-y-2">
@@ -337,8 +370,8 @@ const MyAccountPage = () => {
                             
                             <div className="flex flex-wrap gap-2 mt-4">
                               {booking.coach && booking.coach !== 'none' && (
-                                <span className="inline-flex items-center bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
-                                  <svg className="w-3.5 h-3.5 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <span className="inline-flex items-center text-gray-700 text-xs px-3 py-1.5">
+                                  <svg className="w-3.5 h-3.5 mr-1 text-simstudio-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
                                   Coach: {booking.coach}
@@ -349,14 +382,14 @@ const MyAccountPage = () => {
                           
                           {/* Only show cancel button for future bookings */}
                           {new Date(booking.start_time) > new Date() && (
-                            <div className="px-5 py-4 bg-gray-100 border-t border-gray-200">
+                            <div className="px-5 py-4 border-t border-gray-200">
                               <button
                                 onClick={() => handleDeleteBooking(booking.id)}
                                 disabled={deleteLoading === booking.id}
-                                className={`w-full text-sm py-2 px-4 rounded-md transition-all flex items-center justify-center ${
+                                className={`w-full text-sm py-2 px-4 transition-all flex items-center justify-center ${
                                   deleteLoading === booking.id
-                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    : 'bg-white text-red-600 hover:bg-red-50 border border-red-200 hover:border-red-300 shadow-sm'
+                                    ? 'text-gray-500 cursor-not-allowed'
+                                    : 'text-red-600 hover:text-red-700'
                                 }`}
                               >
                                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -379,17 +412,198 @@ const MyAccountPage = () => {
         {/* Account Information Tab Content */}
         {activeTab === 'account' && (
           <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Account Information</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-800">Account Information</h2>
+              {!isEditing && (
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Edit Details
+                </button>
+              )}
+            </div>
             
             {user && (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-gray-600">Email</p>
-                  <p className="font-medium">{user.email}</p>
-                </div>
-                
-                {/* More account information can be added here in the future */}
-              </div>
+              <>
+                {isEditing ? (
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setUpdateLoading(true);
+                    setMessage(null);
+                    
+                    try {
+                      // Update user profile via API
+                      const response = await fetch('/api/profile', {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          firstName: formData.firstName,
+                          lastName: formData.lastName,
+                          email: formData.email,
+                        }),
+                      });
+                      
+                      if (response.ok) {
+                        // Refresh user data
+                        await refreshUser();
+                        
+                        setMessage({
+                          type: 'success',
+                          text: 'Account details updated successfully'
+                        });
+                        setIsEditing(false);
+                      } else {
+                        // Handle error response without throwing
+                        const errorData = await response.json();
+                        setMessage({
+                          type: 'error',
+                          text: errorData.error || 'Failed to update account details'
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error updating account:', error);
+                      setMessage({
+                        type: 'error',
+                        text: 'Failed to update account details'
+                      });
+                    } finally {
+                      setUpdateLoading(false);
+                    }
+                  }}>
+                    {message && (
+                      <div className={`mb-6 p-4 rounded-lg ${
+                        message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+                      }`}>
+                        {message.text}
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-simstudio-yellow focus:border-transparent"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-simstudio-yellow focus:border-transparent"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-simstudio-yellow focus:border-transparent"
+                          disabled
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Email address cannot be changed</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-4">
+                      <button
+                        type="submit"
+                        disabled={updateLoading}
+                        className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-6 rounded-lg transition-colors"
+                      >
+                        {updateLoading ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditing(false);
+                          setMessage(null);
+                          // Reset form data
+                          setFormData({
+                            firstName: authUser?.name?.split(' ')[0] || '',
+                            lastName: authUser?.name?.split(' ')[1] || '',
+                            email: user.email || ''
+                          });
+                        }}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-6">
+                    {message && (
+                      <div className={`mb-6 p-4 rounded-lg ${
+                        message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+                      }`}>
+                        {message.text}
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-gray-600 text-sm">Name</p>
+                        <p className="font-medium">{authUser?.name || 'Not set'}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-gray-600 text-sm">Email</p>
+                        <p className="font-medium">{user.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t border-gray-200 pt-6 mt-6">
+                      <h3 className="text-lg font-medium text-gray-800 mb-4">Available Credits</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <p className="text-gray-600 text-sm mb-1">Simulator Hours</p>
+                          <p className="text-2xl font-bold text-simstudio-yellow">
+                            {credits?.simulator_hours || 0}
+                          </p>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                          <p className="text-gray-600 text-sm mb-1">Coaching Sessions</p>
+                          <p className="text-2xl font-bold text-simstudio-yellow">
+                            {credits?.coaching_sessions || 0}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-6">
+                        <Link href="/packages" className="text-simstudio-yellow hover:text-yellow-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Purchase More Credits
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

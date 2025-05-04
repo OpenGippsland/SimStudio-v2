@@ -104,3 +104,35 @@ Alternatively, you can manually set these environment variables in the Vercel da
 - The SQLite database file (`bookings.db`) is still included in the repository for local development and testing purposes.
 - For production, the application will use Supabase as the database backend.
 - Make sure to set the Supabase environment variables in your Vercel project settings.
+
+## Debug Mode
+
+The booking system includes a debug mode that can be toggled to show or hide unavailable sessions and closed dates. This is useful for testing and development purposes.
+
+### How to Use Debug Mode
+
+1. Set the `NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS` environment variable in your `.env` file:
+
+   ```
+   # Show unavailable sessions and closed dates (for testing)
+   NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS=true
+   
+   # Hide unavailable sessions and closed dates (for production)
+   NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS=false
+   ```
+
+2. Restart your development server for the changes to take effect.
+
+### Features
+
+When debug mode is enabled (`NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS=true`):
+- Closed dates will be displayed with a "Not Available" message
+- Unavailable time slots will be shown with the reason they are unavailable
+- All dates will be displayed, even if they have no available sessions
+
+When debug mode is disabled (`NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS=false`):
+- Closed dates will be completely hidden
+- Unavailable time slots will be filtered out
+- Only dates with at least one available session will be displayed
+
+This improves the user experience in production while maintaining the ability to test and debug the booking system during development.

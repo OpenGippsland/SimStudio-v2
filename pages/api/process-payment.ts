@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import { createOrUpdateSquareCustomer } from '../../lib/square-customer';
 import { getUserCredits, updateUserCredits } from '../../lib/db-supabase';
+import { supabase } from '../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,7 +17,17 @@ export default async function handler(
   try {
     console.log('Payment API received request:', req.body);
     
-    const { sourceId, amount, userId, description, isAuthenticated } = req.body;
+    const { 
+      sourceId, 
+      amount, 
+      userId, 
+      description, 
+      isAuthenticated,
+      coachId,
+      coachHours,
+      coachingFee,
+      bookingId
+    } = req.body;
     
     if (!sourceId || !amount) {
       console.error('Missing required parameters:', { sourceId: !!sourceId, amount });
@@ -123,9 +134,39 @@ export default async function handler(
         });
         
         console.log('Credits updated for user:', userId);
+        
+        // If this is a booking with coaching fee, update the booking record
+        if (bookingId && coachingFee > 0) {
+          // First check if the booking exists
+          const { data: bookingData, error: bookingError } = await supabase
+            .from('bookings')
+            .select('id, coaching_fee')
+            .eq('id', bookingId)
+            .single();
+          
+          if (bookingError) {
+            console.error('Error fetching booking:', bookingError);
+          } else if (bookingData) {
+            // Update the booking with the coaching fee and payment reference
+            const { error: updateError } = await supabase
+              .from('bookings')
+              .update({ 
+                coaching_fee: coachingFee,
+                payment_status: 'paid',
+                payment_ref: payment.id
+              })
+              .eq('id', bookingId);
+            
+            if (updateError) {
+              console.error('Error updating booking with coaching fee:', updateError);
+            } else {
+              console.log(`Updated booking ${bookingId} with coaching fee: $${coachingFee}`);
+            }
+          }
+        }
       } catch (error) {
-        console.error('Error updating credits:', error);
-        // Continue even if credits update fails
+        console.error('Error updating credits or booking:', error);
+        // Continue even if updates fail
       }
     } else {
       console.log('Guest user payment - credits will be added after account creation');
@@ -134,7 +175,8 @@ export default async function handler(
     return res.status(200).json({
       success: true,
       paymentId: payment.id,
-      hours: hours
+      hours: hours,
+      coachingFee: coachingFee || 0
     });
   } catch (error: any) {
     console.error('Payment error:', error);
@@ -149,6 +191,7 @@ export default async function handler(
       success: true,
       paymentId: `emergency_fallback_${uuidv4()}`,
       hours: hours,
+      coachingFee: req.body?.coachingFee || 0,
       simulated: true,
       error_message: error.message || 'Payment processing failed but bypassed for testing'
     });

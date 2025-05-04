@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import Link from 'next/link';
+import { Session } from '../../lib/booking/types';
+import { supabase } from '../../lib/supabase';
 
 export default function CheckoutSuccess() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export default function CheckoutSuccess() {
   const { user, refreshUser } = useAuth();
   const [timeoutOccurred, setTimeoutOccurred] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'attempted' | 'completed' | 'failed'>('pending');
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
   
   // Use a ref to track if verification has been attempted
   const hasAttemptedVerification = React.useRef(false);
@@ -21,25 +24,33 @@ export default function CheckoutSuccess() {
   // Generate a unique page instance ID to help with debugging
   const pageInstanceId = React.useRef(`page_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`);
   
+  // Store refreshUser in a ref to avoid dependency issues
+  const refreshUserRef = React.useRef(refreshUser);
+  React.useEffect(() => {
+    refreshUserRef.current = refreshUser;
+  }, [refreshUser]);
+  
   // Refresh auth state when component mounts
   useEffect(() => {
     console.log(`[${pageInstanceId.current}] Checkout success page mounted for reference ID:`, ref);
-    refreshUser();
+    
+    // Call refreshUser once on mount
+    refreshUserRef.current();
     
     // Set a timeout to prevent endless loading
     const timeoutId = setTimeout(() => {
-      if (loading) {
+      if (loading && verificationStatus === 'pending') {
         console.log(`[${pageInstanceId.current}] Verification timeout occurred`);
         setTimeoutOccurred(true);
         setLoading(false);
       }
-    }, 10000); // 10 seconds timeout
+    }, 5000); // 5 seconds timeout
     
     return () => {
       console.log(`[${pageInstanceId.current}] Checkout success page unmounting`);
       clearTimeout(timeoutId);
     };
-  }, [refreshUser]);
+  }, []); // Empty dependency array to run only once on mount
   
   // Check if this is a page refresh by looking at the navigation type
   const [isPageRefresh, setIsPageRefresh] = useState(false);
@@ -162,7 +173,108 @@ export default function CheckoutSuccess() {
       }
       
       // Refresh user data to get updated credits
-      await refreshUser();
+      await refreshUserRef.current();
+      
+      // Fetch booking details if payment was successful
+      try {
+        // First check if there's a booking with this payment reference
+        const { data: bookingData, error: bookingError } = await supabase
+          .from('bookings')
+          .select(`
+            id, 
+            start_time, 
+            end_time, 
+            simulator_id, 
+            coach, 
+            coach_hours,
+            payment_status,
+            users (
+              name,
+              email
+            )
+          `)
+          .eq('payment_ref', referenceId)
+          .single();
+          
+        if (bookingError) {
+          console.error(`[${pageInstanceId.current}] Error fetching booking:`, bookingError);
+          
+          // If no booking found with this payment reference, check if there's a booking ID in the order metadata
+          // This handles the case where the booking was created but the payment_ref wasn't updated
+          console.log(`[${pageInstanceId.current}] No booking found with payment_ref, checking order metadata for booking_id`);
+          
+          // Get order details from Square to find booking ID
+          const orderResponse = await fetch('/api/bookings/find-by-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              referenceId
+            })
+          });
+          
+          if (orderResponse.ok) {
+            const orderData = await orderResponse.json();
+            if (orderData.bookingId) {
+              console.log(`[${pageInstanceId.current}] Found booking ID in order metadata:`, orderData.bookingId);
+              
+              // Update the booking with the payment reference
+              const updateResponse = await fetch('/api/bookings/update-payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                  bookingId: orderData.bookingId,
+                  paymentRef: referenceId,
+                  status: 'confirmed'
+                })
+              });
+              
+              if (updateResponse.ok) {
+                console.log(`[${pageInstanceId.current}] Successfully updated booking with payment reference`);
+                
+                // Fetch the updated booking
+                const { data: updatedBooking, error: updatedError } = await supabase
+                  .from('bookings')
+                  .select(`
+                    id, 
+                    start_time, 
+                    end_time, 
+                    simulator_id, 
+                    coach, 
+                    coach_hours,
+                    payment_status,
+                    users (
+                      name,
+                      email
+                    )
+                  `)
+                  .eq('id', orderData.bookingId)
+                  .single();
+                  
+                if (!updatedError && updatedBooking) {
+                  setBookingDetails(updatedBooking);
+                  // Update message to include booking confirmation
+                  setMessage(`Your booking has been confirmed. The ${hours} simulator hours have been automatically applied to this booking.`);
+                }
+              } else {
+                console.error(`[${pageInstanceId.current}] Error updating booking:`, await updateResponse.text());
+              }
+            }
+          }
+        } else if (bookingData) {
+          console.log(`[${pageInstanceId.current}] Found booking:`, bookingData);
+          setBookingDetails(bookingData);
+          
+          // Update message to include booking confirmation
+          setMessage(`Your booking has been confirmed and ${hours} simulator hours have been added to your account.`);
+        }
+      } catch (err) {
+        console.error(`[${pageInstanceId.current}] Error fetching booking details:`, err);
+        // Continue anyway - we'll still show the payment confirmation
+      }
       
       // Store in localStorage that this payment has been verified
       if (typeof window !== 'undefined') {
@@ -180,7 +292,7 @@ export default function CheckoutSuccess() {
       setLoading(false);
       verificationInProgress.current = false;
     }
-  }, [refreshUser, isPageRefresh]);
+  }, [isPageRefresh]); // Only depend on isPageRefresh to prevent infinite loops
   
   // Verify payment when we have the reference ID
   useEffect(() => {
@@ -222,41 +334,6 @@ export default function CheckoutSuccess() {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
             <p>Verifying your payment...</p>
           </div>
-        ) : timeoutOccurred ? (
-          <div className="bg-yellow-100 text-yellow-800 p-4 rounded mb-4">
-            <p className="font-bold">Taking longer than expected</p>
-            <p className="my-2">
-              Your payment may have been processed, but we're having trouble confirming it.
-            </p>
-            <p className="my-2">
-              Please check your email for a confirmation, or contact support with your reference ID: {ref}
-            </p>
-            <div className="mt-4 flex space-x-4">
-              <button
-                onClick={async () => {
-                  if (verificationInProgress.current) {
-                    console.log(`[${pageInstanceId.current}] Verification already in progress, not retrying`);
-                    return;
-                  }
-                  
-                  console.log(`[${pageInstanceId.current}] Manually retrying verification`);
-                  setLoading(true);
-                  setTimeoutOccurred(false);
-                  
-                  if (!ref || typeof ref !== 'string') {
-                    setError('Missing reference ID');
-                    setLoading(false);
-                    return;
-                  }
-                  
-                  await verifyPayment(ref);
-                }}
-                className="py-2 px-4 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
         ) : error ? (
           <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
             <p className="font-bold">Error</p>
@@ -268,24 +345,69 @@ export default function CheckoutSuccess() {
         ) : (
           <div className="bg-green-100 text-green-700 p-4 rounded mb-4">
             <p className="font-bold">Thank you for your purchase!</p>
-            <p className="my-2">{hours} simulator hours have been added to your account.</p>
-            {message && (
-              <p className="my-2 font-medium">{message}</p>
+            <p className="my-2">
+              Your payment has been received and your booking has been confirmed. Your credits have been applied to your booking.
+            </p>
+            <p className="my-2">
+              Your reference ID is: {ref}
+            </p>
+            
+            {/* Display booking details if available */}
+            {bookingDetails && (
+              <div className="mt-4 pt-4 border-t border-green-200">
+                <h3 className="font-bold text-lg mb-2">Booking Confirmation</h3>
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <p className="mb-1">
+                    <span className="font-medium">Date:</span> {new Date(bookingDetails.start_time).toLocaleDateString(undefined, {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}
+                  </p>
+                  <p className="mb-1">
+                    <span className="font-medium">Time:</span> {new Date(bookingDetails.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(bookingDetails.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </p>
+                  <p className="mb-1">
+                    <span className="font-medium">Duration:</span> {Math.round((new Date(bookingDetails.end_time).getTime() - new Date(bookingDetails.start_time).getTime()) / (1000 * 60 * 60))} hours
+                  </p>
+                  <p className="mb-1">
+                    <span className="font-medium">Simulator:</span> #{bookingDetails.simulator_id}
+                  </p>
+                  {bookingDetails.coach && bookingDetails.coach !== 'none' && (
+                    <p className="mb-1">
+                      <span className="font-medium">Coach:</span> {bookingDetails.coach} ({bookingDetails.coach_hours || 1} {(bookingDetails.coach_hours || 1) === 1 ? 'hour' : 'hours'})
+                    </p>
+                  )}
+                  <p className="mb-1">
+                    <span className="font-medium">Status:</span> <span className="text-green-600 font-medium">Confirmed</span>
+                  </p>
+                  <p className="mb-1">
+                    <span className="font-medium">Booking ID:</span> {bookingDetails.id}
+                  </p>
+                  <p className="mb-1">
+                    <span className="font-medium">Payment Reference:</span> {bookingDetails.payment_ref || "N/A"}
+                  </p>
+                </div>
+              </div>
             )}
+            
             <p className="mt-4">Please use the buttons below to continue.</p>
           </div>
         )}
         
         <div className="mt-6 space-y-3">
           <Link
-            href="/booking"
+            href={{
+              pathname: "/booking",
+              query: {
+                fromCheckout: true,
+                paidCoachingFee: true,
+                paymentRef: ref
+              }
+            }}
             className="block w-full py-2 px-4 bg-simstudio-yellow text-black text-center rounded-lg hover:bg-yellow-500 transition-colors"
           >
             Make a new booking
           </Link>
           
           <Link
-            href="/bookings"
+            href="/my-account"
             className="block w-full py-2 px-4 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700"
           >
             Manage my bookings

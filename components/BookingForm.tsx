@@ -6,7 +6,8 @@ import {
   BookingFormProps, 
   FormData, 
   Session, 
-  SessionsByDate 
+  SessionsByDate,
+  CoachProfile
 } from '../lib/booking/types';
 
 // Import utility functions
@@ -35,7 +36,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
     userId: '',
     hours: 1, // Default to 1 hour
     wantsCoach: false, // Default to no coach
-    coach: 'none',
+    coach: 'any',
     coachHours: 1, // Default to 1 hour if coach is selected
     date: '',
     sessionTime: '' // Selected session time slot
@@ -59,7 +60,9 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   useEffect(() => {
     // Check if we're returning from checkout with booking details
     if (router.query.fromBooking || router.query.fromCheckout) {
-      const { date, time, hours, coach } = router.query;
+      const { date, time, hours, coach, paidCoachingFee, ref, paymentRef } = router.query;
+      
+      console.log('Router query params:', router.query);
       
       if (date && time) {
         // Restore form data from URL parameters
@@ -69,8 +72,16 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
           sessionTime: `${date}T${time}:00`,
           hours: hours ? parseInt(hours as string) : prev.hours,
           coach: coach as string || 'none',
-          wantsCoach: coach !== 'none'
+          wantsCoach: coach !== 'none',
+          paidCoachingFee: paidCoachingFee === 'true',
+          paymentRef: (paymentRef || ref) as string // Use paymentRef if available, fall back to ref for backward compatibility
         }));
+        
+        // Log the updated form data for debugging
+        console.log('Updated form data with payment info:', {
+          paidCoachingFee: paidCoachingFee === 'true',
+          paymentRef: paymentRef || ref
+        });
         
         // Fetch available sessions and move to step 3
         const fetchAndRestoreSession = async () => {
@@ -128,24 +139,43 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Coach options
+  // Coach options and profiles
   const [coaches, setCoaches] = useState([
-    { id: 'any', name: 'Any coach' },
-    { id: 'none', name: 'None' }
+    { id: 'any', name: 'Any coach', hourly_rate: null }
   ]);
+  const [coachProfiles, setCoachProfiles] = useState<CoachProfile[]>([]);
 
-  // Fetch coaches on component mount
+  // Fetch coaches and their profiles on component mount
   useEffect(() => {
     const fetchCoaches = async () => {
       try {
-        const res = await fetch('/api/coach-availability?format=coaches');
-        const coachIds = await res.json();
+        // Fetch coach availability for scheduling
+        const availRes = await fetch('/api/coach-availability?format=coaches');
+        const coachIds = await availRes.json();
+        
+        // Fetch coach profiles for rates
+        const profilesRes = await fetch('/api/coach-profiles');
+        const profiles = await profilesRes.json();
+        setCoachProfiles(profiles);
+        
+        // Create a map of coach names to their rates
+        const ratesMap: Record<string, number> = {};
+        
+        // Map coach IDs to names and rates
+        profiles.forEach((profile: CoachProfile) => {
+          if (profile.users?.name) {
+            ratesMap[profile.users.name] = profile.hourly_rate;
+          }
+        });
         
         // Transform to the format needed
         const coachOptions = [
-          { id: 'any', name: 'Any coach' },
-          { id: 'none', name: 'None' },
-          ...coachIds.map(id => ({ id, name: id }))
+          { id: 'any', name: 'Any coach', hourly_rate: null },
+          ...coachIds.map(id => ({ 
+            id, 
+            name: id,
+            hourly_rate: ratesMap[id] || null
+          }))
         ];
         
         setCoaches(coachOptions);
@@ -270,16 +300,19 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
     if (field === 'wantsCoach' && value === false) {
       setFormData(prev => ({
         ...prev,
-        coach: 'none',
+        coach: '',
         coachHours: 1
       }));
     }
     
-    // If coach is toggled on, set default coach to 'any'
-    if (field === 'wantsCoach' && value === true) {
+    // If coach is toggled on, set default coach to first available coach and coachHours to 1
+    if (field === 'wantsCoach' && value === true && coaches.length > 1) {
+      // Skip the first coach which was 'any'
+      const firstRealCoach = coaches[1]?.id || '';
       setFormData(prev => ({
         ...prev,
-        coach: 'any'
+        coach: firstRealCoach,
+        coachHours: 1 // Fixed to 1 hour
       }));
     }
   };
@@ -301,21 +334,6 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   // Handle finding available sessions
   const handleFindSessions = () => {
     setError('');
-    
-    // Check if user is logged in and has enough credits
-    if (formData.userId && selectedUserCredits !== null && selectedUserCredits < formData.hours) {
-      // Redirect to cart page with booking details
-      router.push({
-        pathname: '/cart',
-        query: { 
-          hours: formData.hours,
-          userId: formData.userId,
-          fromBooking: true,
-          message: 'You need to purchase more credits to book this session.'
-        }
-      });
-      return;
-    }
     
     // Check if coach is selected but no coach availability data exists
     if (formData.wantsCoach && formData.coach !== 'none' && formData.coach !== 'any') {
@@ -347,7 +365,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
       }
     }
     
-    // Move to step 2
+    // Move to step 2 - always allow users to see available sessions regardless of credit balance
     setStep(2);
   };
 
@@ -400,7 +418,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
       }
       
       // If "any" coach is selected, find an available coach
-      let selectedCoach = formData.wantsCoach ? formData.coach : 'none';
+      let selectedCoach = formData.wantsCoach ? formData.coach : 'any';
       
       if (formData.wantsCoach && formData.coach === 'any') {
         // Get all coaches (excluding 'any' and 'none')
@@ -439,7 +457,87 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         }
       }
       
-      // Create the booking
+      // Calculate coaching fee if a coach is selected
+      let coachingFee = 0;
+      if (formData.wantsCoach && selectedCoach !== 'any' && selectedCoach !== 'none') {
+        // Find the coach profile to get the hourly rate
+        const selectedCoachProfile = coachProfiles.find(
+          profile => profile.users?.name === selectedCoach
+        );
+        
+        if (selectedCoachProfile) {
+          coachingFee = selectedCoachProfile.hourly_rate * formData.coachHours;
+          // Update formData with coaching fee
+          setFormData(prev => ({
+            ...prev,
+            coachingFee
+          }));
+        }
+      }
+      
+      // If there's a coaching fee and it hasn't been paid yet, create a temporary booking and redirect to cart page for payment
+      if (coachingFee > 0 && !formData.paidCoachingFee) {
+        console.log('Creating temporary booking and redirecting to cart for coaching fee:', coachingFee);
+        
+        // Create a temporary booking to get a booking ID
+        const tempBookingResponse = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: formData.userId,
+            simulatorId: availableSimulator,
+            startTime: selectedSession.startTime,
+            endTime: selectedSession.endTime,
+            coach: selectedCoach,
+            coachHours: formData.coachHours,
+            coachingFee: coachingFee,
+            payment_status: 'pending' // Mark as pending payment
+          })
+        });
+        
+        if (!tempBookingResponse.ok) {
+          const errorData = await tempBookingResponse.json();
+          throw new Error(errorData.error || 'Failed to create temporary booking');
+        }
+        
+        const tempBookingData = await tempBookingResponse.json();
+        const bookingId = tempBookingData.id;
+        
+        console.log('Created temporary booking with ID:', bookingId);
+        
+        // Format time for URL
+        const time = new Date(selectedSession.startTime).toTimeString().split(' ')[0].substring(0, 5);
+        
+        router.push({
+          pathname: '/cart',
+          query: { 
+            hours: formData.hours,
+            userId: formData.userId,
+            date: formData.date,
+            time: time,
+            coach: selectedCoach,
+            coachingFee: coachingFee,
+            fromBooking: true,
+            bookingId: bookingId, // Pass the booking ID to the cart
+            message: `Your booking includes a coaching fee of $${coachingFee.toFixed(2)}.`
+          }
+        });
+        return;
+      }
+      
+      // If coaching fee has been paid, log it and ensure we have the payment reference
+      if (coachingFee > 0 && formData.paidCoachingFee) {
+        console.log('Coaching fee already paid, proceeding with booking');
+        console.log('Payment reference:', formData.paymentRef);
+        
+        if (!formData.paymentRef) {
+          throw new Error('Payment reference is missing. Please try again or contact support.');
+        }
+      }
+      
+      // Create booking with payment reference if available
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -451,7 +549,9 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
           startTime: selectedSession.startTime,
           endTime: selectedSession.endTime,
           coach: selectedCoach,
-          coachHours: formData.coachHours // Pass coach hours to the API
+          coachHours: formData.coachHours,
+          coachingFee: coachingFee, // Pass coaching fee to the API
+          paymentRef: formData.paymentRef // Pass payment reference to the API
         })
       });
 
@@ -465,7 +565,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         userId: selectedUserId || '', // Keep the userId
         hours: 1,
         wantsCoach: false,
-        coach: 'none',
+        coach: 'any',
         coachHours: 1,
         date: '',
         sessionTime: ''
@@ -496,7 +596,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
       userId: selectedUserId || '',
       hours: 1,
       wantsCoach: false,
-      coach: 'none',
+      coach: 'any',
       coachHours: 1,
       date: '',
       sessionTime: ''

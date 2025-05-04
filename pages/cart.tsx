@@ -6,7 +6,7 @@ import Cart from '../components/Cart'
 
 export default function CartPage() {
   const router = useRouter()
-  const { hours, userId, date, time, coach, message, fromBooking } = router.query
+  const { hours, userId, date, time, coach, message, fromBooking, coachingFee, bookingId } = router.query
   
   // Parse booking details from query parameters
   const bookingDetails = {
@@ -15,7 +15,9 @@ export default function CartPage() {
     date: date as string || '',
     time: time as string || '',
     coach: coach as string || 'none',
-    message: message as string || ''
+    message: message as string || '',
+    coachingFee: coachingFee ? parseFloat(coachingFee as string) : undefined,
+    bookingId: bookingId ? parseInt(bookingId as string, 10) : undefined
   }
 
   return (

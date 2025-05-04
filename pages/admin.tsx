@@ -10,6 +10,7 @@ import BusinessHoursForm from '../components/admin/BusinessHoursForm'
 import SpecialDatesForm from '../components/admin/SpecialDatesForm'
 import BookingsManager from '../components/admin/BookingsManager'
 import UserManager from '../components/admin/UserManager'
+import CoachProfileManager from '../components/admin/CoachProfileManager'
 
 // Main Admin Page
 export default function AdminPage() {
@@ -120,6 +121,16 @@ export default function AdminPage() {
                 User Credits
               </button>
               <button
+                onClick={() => setActiveTab('coach-profiles')}
+                className={`py-4 px-1 font-medium text-sm border-b-2 ${
+                  activeTab === 'coach-profiles'
+                    ? 'border-simstudio-yellow text-simstudio-yellow'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Coach Profiles
+              </button>
+              <button
                 onClick={() => setActiveTab('coach-availability')}
                 className={`py-4 px-1 font-medium text-sm border-b-2 ${
                   activeTab === 'coach-availability'
@@ -140,6 +151,7 @@ export default function AdminPage() {
             {activeTab === 'special-dates' && <SpecialDatesForm />}
             {activeTab === 'packages' && <PackageManager />}
             {activeTab === 'user-credits' && <UserCreditsManager />}
+            {activeTab === 'coach-profiles' && <CoachProfileManager />}
             {activeTab === 'coach-availability' && <CoachAvailabilityForm />}
           </div>
         </div>

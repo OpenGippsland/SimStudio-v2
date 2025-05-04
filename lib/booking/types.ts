@@ -4,6 +4,20 @@ export interface User {
   simulator_hours: number;
 }
 
+export interface CoachProfile {
+  id: number;
+  user_id: number;
+  hourly_rate: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  users?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
 export interface BookingFormProps {
   onSuccess?: () => void;
   selectedUserId?: string;
@@ -29,6 +43,9 @@ export interface FormData {
   coachHours: number;
   date: string;
   sessionTime: string;
+  coachingFee?: number;
+  paidCoachingFee?: boolean;
+  paymentRef?: string;
 }
 
 export interface SessionDetails {
@@ -42,4 +59,6 @@ export interface SessionDetails {
 export interface Coach {
   id: string;
   name: string;
+  hourly_rate?: number;
+  description?: string;
 }

@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('No NextAuth session, clearing user');
       setUser(null);
     }
-  }, [nextAuthSession, user]);
+  }, [nextAuthSession]); // Only depend on nextAuthSession to prevent infinite loops
   
   const signIn = async (email: string, password: string) => {
     try {

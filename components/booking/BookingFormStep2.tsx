@@ -20,7 +20,18 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
 }) => {
   // Sort dates chronologically and prepare data for display
   const sortedDates = useMemo(() => {
+    // Filter out dates with no sessions or only unavailable sessions when debug mode is off
+    const showUnavailableSessions = typeof window !== 'undefined' && 
+      process.env.NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS === 'true';
+    
     return Object.entries(availableSessions)
+      .filter(([_, sessions]) => {
+        // If debug mode is on, show all dates
+        if (showUnavailableSessions) return true;
+        
+        // Otherwise, only show dates with at least one available session
+        return sessions.some(session => session.isAvailable);
+      })
       .sort(([dateA], [dateB]) => {
         return new Date(dateA).getTime() - new Date(dateB).getTime();
       });
@@ -35,7 +46,7 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
         <p className="text-gray-700">
           <span className="font-medium">Your selection:</span> {formData.hours} hour{formData.hours !== 1 ? 's' : ''} simulator session
           {formData.wantsCoach ? 
-            ` with ${formData.coach === 'any' ? 'any' : formData.coach} coach for ${formData.coachHours} hour${formData.coachHours !== 1 ? 's' : ''}` : 
+            ` with ${formData.coach ? formData.coach : 'selected'} coach for 1 hour` : 
             ' without a coach'
           }
         </p>

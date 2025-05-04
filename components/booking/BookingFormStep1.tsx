@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PillSelector from '../ui/PillSelector';
-import { FormData } from '../../lib/booking/types';
+import { FormData, Coach, CoachProfile } from '../../lib/booking/types';
 
 interface BookingFormStep1Props {
   formData: FormData;
@@ -8,6 +8,7 @@ interface BookingFormStep1Props {
   handleFindSessions: () => void;
   selectedUserCredits: number | null;
   error?: string;
+  updateFormData?: (updates: Partial<FormData>) => void;
 }
 
 const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
@@ -25,43 +26,57 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
     { value: 4, label: '4h' }
   ];
 
-  // Coach duration options
-  const coachDurationOptions = [
-    { value: 1, label: '1h' },
-    { value: 2, label: '2h' }
-  ];
-
   // Yes/No options for coach selection
   const yesNoOptions = [
     { value: false, label: 'No' },
     { value: true, label: 'Yes' }
   ];
 
-  // Coach selection options
-  const [coachOptions, setCoachOptions] = useState([
-    { value: 'any', label: 'Any' }
-  ]);
+  // Coach selection options with rates
+  const [coachOptions, setCoachOptions] = useState<{value: string, label: string}[]>([]);
+  
+  // Coach profiles and rates
+  const [coachProfiles, setCoachProfiles] = useState<CoachProfile[]>([]);
+  const [coachRates, setCoachRates] = useState<Record<string, number>>({});
 
-  // Fetch coaches on component mount
+  // Fetch coaches and their rates on component mount
   useEffect(() => {
-    const fetchCoaches = async () => {
+    const fetchCoachData = async () => {
       try {
-        const res = await fetch('/api/coach-availability?format=coaches');
-        const coaches = await res.json();
+        // Fetch coach availability for session scheduling
+        const availRes = await fetch('/api/coach-availability?format=coaches');
+        const coaches = await availRes.json();
+        
+        // Fetch coach profiles to get rates
+        const profilesRes = await fetch('/api/coach-profiles');
+        const profiles = await profilesRes.json();
+        setCoachProfiles(profiles);
+        
+        // Create a map of coach names to their rates
+        const ratesMap: Record<string, number> = {};
+        
+        // Map coach IDs to names and rates
+        profiles.forEach((profile: CoachProfile) => {
+          if (profile.users?.name) {
+            ratesMap[profile.users.name] = profile.hourly_rate;
+          }
+        });
+        
+        setCoachRates(ratesMap);
         
         // Transform to the format needed for PillSelector
-        const options = [
-          { value: 'any', label: 'Any' },
-          ...coaches.map(coach => ({ value: coach, label: coach }))
-        ];
+        const options = coaches.map((coach: string) => ({ 
+          value: coach, 
+          label: `${coach}${ratesMap[coach] ? ` ($${ratesMap[coach]}/hr)` : ''}` 
+        }));
         
         setCoachOptions(options);
       } catch (error) {
-        console.error('Error fetching coaches:', error);
+        console.error('Error fetching coach data:', error);
       }
     };
     
-    fetchCoaches();
+    fetchCoachData();
   }, []);
 
   return (
@@ -100,15 +115,6 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
             />
           </div>
           
-          <div className="mb-6">
-            <label className="block text-gray-700 font-medium mb-3">Coach Duration:</label>
-            <PillSelector
-              options={coachDurationOptions}
-              selectedValue={formData.coachHours}
-              onChange={(value) => handlePillSelection('coachHours', value)}
-              name="coachHours"
-            />
-          </div>
         </>
       )}
       
@@ -139,6 +145,22 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
             </p>
           </>
         )}
+        
+        {/* Display coaching fee if a coach is selected */}
+        {formData.wantsCoach && coachRates[formData.coach] && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <p className="text-gray-800 font-medium">
+              Coaching Fee
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              Coach rate: ${coachRates[formData.coach]}/hour
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              Total coaching fee: ${(coachRates[formData.coach] * formData.coachHours).toFixed(2)}
+              {formData.coachHours > 0 ? ` (${formData.coachHours} ${formData.coachHours === 1 ? 'hour' : 'hours'})` : ''}
+            </p>
+          </div>
+        )}
       </div>
       
       {error && (
@@ -152,9 +174,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
         onClick={handleFindSessions}
         className="w-full py-3 px-6 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors"
       >
-        {selectedUserCredits !== null && selectedUserCredits < formData.hours 
-          ? "PURCHASE CREDITS" 
-          : "FIND AVAILABLE SESSIONS"}
+        FIND AVAILABLE SESSIONS
       </button>
     </div>
   );

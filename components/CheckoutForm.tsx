@@ -10,6 +10,8 @@ interface CheckoutFormProps {
   isLoggedIn: boolean;
   onSuccess?: (userId: string) => void;
   fromBooking?: boolean;
+  coachingFee?: number;
+  bookingDetails?: any;
 }
 
 export default function CheckoutForm({ 
@@ -18,7 +20,9 @@ export default function CheckoutForm({
   userId, 
   isLoggedIn,
   onSuccess,
-  fromBooking
+  fromBooking,
+  coachingFee,
+  bookingDetails
 }: CheckoutFormProps) {
   const { user, authUser, refreshUser } = useAuth();
   const router = useRouter();
@@ -68,12 +72,19 @@ export default function CheckoutForm({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount: totalPrice,
+          amount: totalPrice + (coachingFee || 0),
           userId: userId,
           isAuthenticated: true, // Always true now since we require login
-          description: `SimStudio Booking - ${totalHours} hours`,
+          description: coachingFee 
+            ? `SimStudio Booking - ${totalHours} hours + Coaching Fee`
+            : `SimStudio Booking - ${totalHours} hours`,
           fromBooking: fromBooking, // Pass the fromBooking parameter
-          totalHours: totalHours // Pass the actual hours to be credited
+          totalHours: totalHours, // Pass the actual hours to be credited
+          coachingFee: coachingFee, // Pass the coaching fee
+          bookingDetails: {
+            ...bookingDetails,
+            bookingId: bookingDetails?.bookingId
+          } // Pass the booking details with booking ID
         })
       });
       
@@ -97,15 +108,39 @@ export default function CheckoutForm({
     <div>
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Checkout</h2>
       
+      {fromBooking && bookingDetails && (
+        <div className="mb-6 p-4 bg-blue-50 text-blue-800 rounded-lg border border-blue-200">
+          <h3 className="font-bold text-lg mb-2">Booking Summary</h3>
+          <p><strong>Date:</strong> {bookingDetails.date}</p>
+          <p><strong>Time:</strong> {bookingDetails.time}</p>
+          {bookingDetails.coach && bookingDetails.coach !== 'None' && (
+            <p><strong>Coach:</strong> {bookingDetails.coach}</p>
+          )}
+          <p className="mt-2">Your booking will be automatically confirmed once payment is complete.</p>
+        </div>
+      )}
+      
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Order Summary</h3>
-        <div className="flex justify-between text-lg">
-          <span>Total Hours:</span>
+        <div className="flex justify-between text-lg font-semibold mb-2">
+          <span>Simulator Hours:</span>
           <span>{totalHours} hours</span>
         </div>
-        <div className="flex justify-between text-lg font-bold mt-2">
-          <span>Total Price:</span>
+        
+        <div className="flex justify-between text-lg font-semibold mb-2">
+          <span>Simulator Price:</span>
           <span>${totalPrice.toFixed(2)}</span>
+        </div>
+        
+        {coachingFee && coachingFee > 0 && (
+          <div className="flex justify-between text-lg font-semibold mb-2">
+            <span>Coaching Fee:</span>
+            <span>${coachingFee.toFixed(2)}</span>
+          </div>
+        )}
+        
+        <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-gray-200">
+          <span>Total:</span>
+          <span>${(totalPrice + (coachingFee || 0)).toFixed(2)}</span>
         </div>
       </div>
       
@@ -125,7 +160,7 @@ export default function CheckoutForm({
           disabled={loading}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
         >
-          {loading ? 'Processing...' : `Proceed to Checkout • $${totalPrice.toFixed(2)}`}
+          {loading ? 'Processing...' : `Proceed to Checkout • $${(totalPrice + (coachingFee || 0)).toFixed(2)}`}
         </button>
         
         {fromBooking && (

@@ -109,6 +109,39 @@ export default async function handler(
         
         return res.status(200).json(formattedUser)
       }
+      // Get potential coaches (users who don't have a coach profile yet)
+      else if (req.query.role === 'potential_coaches') {
+        // First, get all users
+        const { data: allUsers, error: usersError } = await supabase
+          .from('users')
+          .select(`
+            id, 
+            email,
+            name,
+            is_coach,
+            is_admin
+          `)
+          .order('name');
+        
+        if (usersError) {
+          throw usersError;
+        }
+        
+        // Then, get all existing coach profiles
+        const { data: coachProfiles, error: profilesError } = await supabase
+          .from('coach_profiles')
+          .select('user_id');
+        
+        if (profilesError) {
+          throw profilesError;
+        }
+        
+        // Filter out users who already have a coach profile
+        const existingProfileUserIds = coachProfiles.map(profile => profile.user_id);
+        const potentialCoaches = allUsers.filter(user => !existingProfileUserIds.includes(user.id));
+        
+        return res.status(200).json(potentialCoaches);
+      }
       // Otherwise, get all users
       else {
         // Get all users with credits and role fields

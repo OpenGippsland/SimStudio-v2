@@ -7,6 +7,7 @@ import AuthGuard from '../components/auth/AuthGuard';
 const MyAccountPage = () => {
   const { user, authUser, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('bookings');
+  const [coachProfile, setCoachProfile] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
@@ -69,10 +70,35 @@ const MyAccountPage = () => {
     }
   };
 
+  // Fetch coach profile if user is a coach
+  const fetchCoachProfile = async () => {
+    if (!user || !user.is_coach) return;
+    
+    try {
+      const response = await fetch(`/api/coach-profiles?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setCoachProfile(data[0]);
+        } else {
+          // User is marked as coach but doesn't have a profile yet
+          setCoachProfile(null);
+        }
+      } else {
+        console.error('Failed to fetch coach profile');
+      }
+    } catch (error) {
+      console.error('Error fetching coach profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchBookings();
       fetchCredits();
+      fetchCoachProfile();
       
       // Initialize form data with user info
       setFormData({
@@ -255,6 +281,18 @@ const MyAccountPage = () => {
             >
               Account Information
             </button>
+            {user?.is_coach && (
+              <button
+                onClick={() => setActiveTab('coach')}
+                className={`py-4 px-1 font-medium text-sm border-b-2 ${
+                  activeTab === 'coach'
+                    ? 'border-simstudio-yellow text-simstudio-yellow'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Coach Profile
+              </button>
+            )}
           </nav>
         </div>
         
@@ -270,7 +308,7 @@ const MyAccountPage = () => {
                 >
                   {loading ? 'Refreshing...' : 'Refresh'}
                 </button>
-                <Link href="/" className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg transition-colors">
+                <Link href="/booking" className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg transition-colors">
                   New Booking
                 </Link>
               </div>
@@ -404,6 +442,77 @@ const MyAccountPage = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Coach Profile Tab Content */}
+        {activeTab === 'coach' && user?.is_coach && (
+          <div className="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-800">Coach Profile</h2>
+              <Link 
+                href="/coach-availability"
+                className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Manage Availability
+              </Link>
+            </div>
+            
+            {loading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Loading profile...</p>
+              </div>
+            ) : coachProfile ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-gray-600 text-sm">Hourly Rate</p>
+                    <p className="text-2xl font-bold text-simstudio-yellow">
+                      ${coachProfile.hourly_rate.toFixed(2)}/hour
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-gray-600 text-sm">Profile Created</p>
+                    <p className="font-medium">
+                      {new Date(coachProfile.created_at).toLocaleDateString('en-AU')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-6 mt-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Description</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p className="text-gray-700">
+                      {coachProfile.description || 'No description provided.'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-6 mt-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Manage Your Coach Profile</h3>
+                  <p className="text-gray-600 mb-4">
+                    You can update your coach profile details, including hourly rate and description, through the admin panel.
+                  </p>
+                  <Link 
+                    href="/admin"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors inline-block"
+                  >
+                    Go to Admin Panel
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">Your coach profile is not set up yet.</p>
+                <Link 
+                  href="/admin"
+                  className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Set Up Profile
+                </Link>
               </div>
             )}
           </div>

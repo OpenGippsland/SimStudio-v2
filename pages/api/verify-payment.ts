@@ -142,6 +142,20 @@ export default async function handler(
       console.log(`[${requestId}] Payment amount: ${totalAmount}`);
     }
     
+    // Check if this payment includes a coaching fee
+    const hasCoachingFee = order.metadata?.has_coaching_fee === 'true';
+    let coachingFee = 0;
+    let coachId: number | null = null;
+    
+    if (hasCoachingFee) {
+      coachingFee = parseFloat(order.metadata?.coaching_fee || '0');
+      // Convert coach_id to number if it exists
+      if (order.metadata?.coach_id) {
+        coachId = parseInt(order.metadata.coach_id, 10);
+      }
+      console.log(`[${requestId}] Payment includes coaching fee: $${coachingFee} for coach: ${coachId}`);
+    }
+    
     try {
       // IMPORTANT: Check AGAIN if this payment has already been processed
       // This double-check helps prevent race conditions
@@ -190,7 +204,10 @@ export default async function handler(
             user_id: numericUserId, 
             reference_id: referenceId,
             amount: totalAmount,
-            hours: hours
+            hours: hours,
+            has_coaching_fee: hasCoachingFee,
+            coaching_fee: coachingFee,
+            coach_id: coachId
           })
           .select()
           .single();
@@ -224,57 +241,215 @@ export default async function handler(
       
       console.log(`[${requestId}] Successfully recorded payment: ${referenceId}`);
       
-      // Now that we've successfully recorded the payment, add credits to the user
-      console.log(`[${requestId}] Adding ${hours} credits to user ${userId}`);
+      // Check if there's a booking ID in the order metadata
+      const bookingId = order.metadata?.booking_id ? parseInt(order.metadata.booking_id, 10) : null;
       
-      // Add credits to existing user
-      // Note: The credits table uses numeric user IDs, not UUIDs
-      // We're using the numericUserId we defined earlier
-      
-      const { data: currentCredits, error: creditsError } = await supabase
-        .from('credits')
-        .select('simulator_hours')
-        .eq('user_id', numericUserId)
-        .single();
-      
-      if (creditsError && creditsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        console.warn(`[${requestId}] Error fetching credits:`, creditsError);
-        // Continue anyway - we'll try to insert new credits
+      // If there's a booking ID, update the booking status to confirmed
+      if (bookingId) {
+        try {
+          console.log(`[${requestId}] Updating booking status for booking ID: ${bookingId}`);
+          
+          // Get booking details to determine how many hours it uses
+          const { data: bookingData, error: bookingFetchError } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', bookingId)
+            .single();
+            
+          if (bookingFetchError) {
+            console.error(`[${requestId}] Error fetching booking details:`, bookingFetchError);
+            // Continue anyway - we'll still update the booking status
+          }
+          
+          // Calculate booking duration in hours
+          let bookingHours = 0;
+          if (bookingData) {
+            const startTime = new Date(bookingData.start_time);
+            const endTime = new Date(bookingData.end_time);
+            bookingHours = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60));
+            console.log(`[${requestId}] Booking duration: ${bookingHours} hours`);
+          }
+          
+          const { error: bookingUpdateError } = await supabase
+            .from('bookings')
+            .update({ 
+              payment_status: 'confirmed',
+              payment_ref: referenceId
+            })
+            .eq('id', bookingId);
+            
+          if (bookingUpdateError) {
+            console.error(`[${requestId}] Error updating booking status:`, bookingUpdateError);
+            // Continue anyway - we'll still process the payment
+          } else {
+            console.log(`[${requestId}] Successfully updated booking status to confirmed`);
+          }
+          
+          // For bookings, we need to:
+          // 1. Add all purchased credits to the user's account
+          // 2. Then deduct the credits needed for the booking
+          if (bookingHours > 0) {
+            console.log(`[${requestId}] Adding all ${hours} purchased hours to user account, then deducting ${bookingHours} hours for the booking.`);
+            
+            // First add all purchased credits to the user's account
+            await addCreditsToUser(numericUserId, hours, requestId);
+            
+            // Then deduct the credits needed for the booking
+            await deductCreditsForBooking(numericUserId, bookingHours, requestId);
+          } else {
+            console.log(`[${requestId}] Could not determine booking hours. Adding all ${hours} purchased hours to user account.`);
+            
+            // Add all purchased credits to user's account
+            await addCreditsToUser(numericUserId, hours, requestId);
+          }
+        } catch (err) {
+          console.error(`[${requestId}] Error updating booking status:`, err);
+          // Continue anyway - we'll still process the payment
+        }
+      } else {
+        // Only add credits to the user's account if this payment is not for a booking
+        console.log(`[${requestId}] Adding ${hours} credits to user ${userId}`);
+        
+        // Add all purchased credits to user's account
+        await addCreditsToUser(numericUserId, hours, requestId);
       }
       
-      if (currentCredits) {
-        // Update existing credits
-        console.log(`[${requestId}] Updating existing credits from ${currentCredits.simulator_hours} to ${currentCredits.simulator_hours + hours}`);
+      // Helper function to deduct credits from a user's account for a booking
+      async function deductCreditsForBooking(userId: number, creditsToDeduct: number, requestId: string) {
+        console.log(`[${requestId}] Deducting ${creditsToDeduct} credits from user ${userId} for booking`);
+        
+        const { data: currentCredits, error: creditsError } = await supabase
+          .from('credits')
+          .select('simulator_hours')
+          .eq('user_id', userId)
+          .single();
+        
+        if (creditsError) {
+          console.error(`[${requestId}] Error fetching credits for deduction:`, creditsError);
+          return; // Skip deduction if we can't fetch current credits
+        }
+        
+        if (!currentCredits) {
+          console.error(`[${requestId}] No credits record found for user ${userId}`);
+          return; // Skip deduction if no credits record exists
+        }
+        
+        // Calculate new credit balance
+        const newBalance = Math.max(0, currentCredits.simulator_hours - creditsToDeduct);
+        console.log(`[${requestId}] Updating credits from ${currentCredits.simulator_hours} to ${newBalance} after booking deduction`);
         
         const { error: updateError } = await supabase
           .from('credits')
           .update({ 
-            simulator_hours: currentCredits.simulator_hours + hours 
+            simulator_hours: newBalance
           })
-          .eq('user_id', numericUserId);
+          .eq('user_id', userId);
         
         if (updateError) {
-          console.error(`[${requestId}] Error updating credits:`, updateError);
-          throw updateError;
+          console.error(`[${requestId}] Error deducting credits:`, updateError);
         } else {
-          console.log(`[${requestId}] Successfully updated credits for user ${userId}`);
+          console.log(`[${requestId}] Successfully deducted ${creditsToDeduct} credits for booking`);
         }
-      } else {
-        // Insert new credits record
-        console.log(`[${requestId}] Creating new credits record with ${hours} hours for user ${userId}`);
+      }
+      
+      // Helper function to add credits to a user's account
+      async function addCreditsToUser(userId: number, creditsToAdd: number, requestId: string) {
+        console.log(`[${requestId}] Adding ${creditsToAdd} credits to user ${userId}`);
         
-        const { error: insertError } = await supabase
+        // If there's a coaching fee, process payment to the coach
+        if (hasCoachingFee && coachingFee > 0 && coachId !== null) {
+          try {
+            console.log(`[${requestId}] Processing coaching fee payment of $${coachingFee} to coach ${coachId}`);
+            
+            // Get coach profile to verify coach exists
+            const { data: coachProfile, error: coachError } = await supabase
+              .from('coach_profiles')
+              .select('*, users!coach_profiles_user_id_fkey(name)')
+              .eq('id', coachId)
+              .single();
+              
+            if (coachError) {
+              console.error(`[${requestId}] Error fetching coach profile:`, coachError);
+              // Continue anyway - we'll still record the payment
+            } else {
+              // Access the coach name from the joined users table
+              const coachName = coachProfile.users?.name || 'Unknown Coach';
+              console.log(`[${requestId}] Found coach profile for ${coachName}`);
+              
+              // Insert into coach_payments table
+              const { error: coachPaymentError } = await supabase
+                .from('coach_payments')
+                .insert({
+                  coach_id: coachId,
+                  user_id: numericUserId,
+                  amount: coachingFee,
+                  reference_id: referenceId,
+                  status: 'completed',
+                  booking_id: order.metadata?.booking_id ? parseInt(order.metadata.booking_id, 10) : null
+                });
+                
+              if (coachPaymentError) {
+                console.error(`[${requestId}] Error recording coach payment:`, coachPaymentError);
+                // Continue anyway - we'll still add credits to the user
+              } else {
+                console.log(`[${requestId}] Successfully recorded coach payment`);
+              }
+            }
+          } catch (err) {
+            console.error(`[${requestId}] Error processing coach payment:`, err);
+            // Continue anyway - we'll still add credits to the user
+          }
+        }
+        
+        // Add credits to existing user
+        // Note: The credits table uses numeric user IDs, not UUIDs
+        // We're using the numericUserId we defined earlier
+        
+        const { data: currentCredits, error: creditsError } = await supabase
           .from('credits')
-          .insert({ 
-            user_id: numericUserId, 
-            simulator_hours: hours 
-          });
+          .select('simulator_hours')
+          .eq('user_id', numericUserId)
+          .single();
         
-        if (insertError) {
-          console.error(`[${requestId}] Error inserting credits:`, insertError);
-          throw insertError;
+        if (creditsError && creditsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.warn(`[${requestId}] Error fetching credits:`, creditsError);
+          // Continue anyway - we'll try to insert new credits
+        }
+        
+        if (currentCredits) {
+          // Update existing credits
+          console.log(`[${requestId}] Updating existing credits from ${currentCredits.simulator_hours} to ${currentCredits.simulator_hours + hours}`);
+          
+          const { error: updateError } = await supabase
+            .from('credits')
+            .update({ 
+              simulator_hours: currentCredits.simulator_hours + hours 
+            })
+            .eq('user_id', numericUserId);
+          
+          if (updateError) {
+            console.error(`[${requestId}] Error updating credits:`, updateError);
+            throw updateError;
+          } else {
+            console.log(`[${requestId}] Successfully updated credits for user ${userId}`);
+          }
         } else {
-          console.log(`[${requestId}] Successfully created credits for user ${userId}`);
+          // Insert new credits record
+          console.log(`[${requestId}] Creating new credits record with ${hours} hours for user ${userId}`);
+          
+          const { error: insertError } = await supabase
+            .from('credits')
+            .insert({ 
+              user_id: numericUserId, 
+              simulator_hours: hours 
+            });
+          
+          if (insertError) {
+            console.error(`[${requestId}] Error inserting credits:`, insertError);
+            throw insertError;
+          } else {
+            console.log(`[${requestId}] Successfully created credits for user ${userId}`);
+          }
         }
       }
       
@@ -283,7 +458,10 @@ export default async function handler(
       return res.status(200).json({
         success: true,
         hours: hours,
-        message: `${hours} simulator hours have been added to your account.`
+        message: hasCoachingFee && coachingFee > 0 
+          ? `${hours} simulator hours have been added to your account and coaching fee has been processed.`
+          : `${hours} simulator hours have been added to your account.`,
+        coachingFee: hasCoachingFee ? coachingFee : undefined
       });
       
     } catch (err) {

@@ -6,9 +6,96 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
+      coach_payments: {
+        Row: {
+          id: number
+          coach_id: number
+          user_id: number
+          amount: number
+          reference_id: string
+          status: string
+          created_at: string
+          booking_id: number | null
+        }
+        Insert: {
+          id?: number
+          coach_id: number
+          user_id: number
+          amount: number
+          reference_id: string
+          status: string
+          created_at?: string
+          booking_id?: number | null
+        }
+        Update: {
+          id?: number
+          coach_id?: number
+          user_id?: number
+          amount?: number
+          reference_id?: string
+          status?: string
+          created_at?: string
+          booking_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_payments_coach_id_fkey"
+            columns: ["coach_id"]
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_payments_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      coach_profiles: {
+        Row: {
+          id: number
+          user_id: number
+          hourly_rate: number
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: number
+          hourly_rate: number
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: number
+          hourly_rate?: number
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       temp_users: {
         Row: {
           id: number
@@ -38,9 +125,12 @@ export type Database = {
           booking_type: string | null
           cancellation_reason: string | null
           coach: string | null
+          coaching_fee: number | null
           end_time: string | null
           has_coaching: boolean | null
           id: number
+          payment_ref: string | null
+          payment_status: string | null
           simulator_id: number | null
           start_time: string | null
           status: string | null
@@ -51,9 +141,12 @@ export type Database = {
           booking_type?: string | null
           cancellation_reason?: string | null
           coach?: string | null
+          coaching_fee?: number | null
           end_time?: string | null
           has_coaching?: boolean | null
           id?: number
+          payment_ref?: string | null
+          payment_status?: string | null
           simulator_id?: number | null
           start_time?: string | null
           status?: string | null
@@ -64,9 +157,12 @@ export type Database = {
           booking_type?: string | null
           cancellation_reason?: string | null
           coach?: string | null
+          coaching_fee?: number | null
           end_time?: string | null
           has_coaching?: boolean | null
           id?: number
+          payment_ref?: string | null
+          payment_status?: string | null
           simulator_id?: number | null
           start_time?: string | null
           status?: string | null
@@ -284,6 +380,16 @@ export type Database = {
       create_payments_table: {
         Args: Record<string, never>
         Returns: undefined
+      },
+      create_coach_profiles_table: {
+        Args: Record<string, never>
+        Returns: undefined
+      },
+      exec_sql: {
+        Args: {
+          sql: string
+        }
+        Returns: unknown
       }
     }
     Enums: {

@@ -160,6 +160,10 @@ export const generateAvailableSessions = (
   const minBookingTime = new Date(today.getTime() + (2 * 60 * 60 * 1000)); // 2 hours in advance
   const daysToShow = 14; // Show next 14 days
   
+  // Check if debug mode is enabled
+  const showUnavailableSessions = typeof window !== 'undefined' && 
+    process.env.NEXT_PUBLIC_SHOW_UNAVAILABLE_SESSIONS === 'true';
+  
   // Generate dates for the next 14 days
   for (let i = 0; i < daysToShow; i++) {
     const date = new Date(today);
@@ -168,6 +172,11 @@ export const generateAvailableSessions = (
     
     // Check if date is closed
     const dateClosed = isDateClosed(dateString, businessHours, specialDates, coachAvailability, formData.coach);
+    
+    // Skip closed dates if debug mode is off
+    if (dateClosed && !showUnavailableSessions) {
+      continue;
+    }
     
     // Get business hours for this day
     const dayOfWeek = date.getDay();
@@ -180,7 +189,7 @@ export const generateAvailableSessions = (
     // Initialize time slots array for this date
     const timeSlots: Session[] = [];
     
-    // If date is closed, add a placeholder session to indicate the date is closed
+    // If date is closed and debug mode is on, add a placeholder session to indicate the date is closed
     if (dateClosed) {
       const closedReason = getClosedReason(dateString, businessHours, specialDates, coachAvailability, formData.coach);
       
@@ -307,14 +316,16 @@ export const generateAvailableSessions = (
         unavailableReason = 'All simulators are booked for this time slot';
       }
       
-      // Add the time slot to the array
-      timeSlots.push({
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        formattedTime,
-        isAvailable,
-        unavailableReason: isAvailable ? undefined : unavailableReason
-      });
+      // Only add unavailable time slots if debug mode is on
+      if (isAvailable || showUnavailableSessions) {
+        timeSlots.push({
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          formattedTime,
+          isAvailable,
+          unavailableReason: isAvailable ? undefined : unavailableReason
+        });
+      }
     }
     
     // Add all dates, even if they have no available sessions

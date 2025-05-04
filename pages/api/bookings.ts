@@ -37,7 +37,11 @@ export default async function handler(
       
       const availableCredits = credits?.simulator_hours || 0
       
-      if (availableCredits < bookingHours) {
+      // Check if this is a temporary booking for checkout
+      const isTemporaryBooking = req.body.isTemporaryBooking === true;
+      
+      // Only check credits if this is not a temporary booking
+      if (!isTemporaryBooking && availableCredits < bookingHours) {
         return res.status(400).json({ 
           error: 'Insufficient credits', 
           required: bookingHours,
@@ -239,10 +243,27 @@ export default async function handler(
       }
 
       // Check coach availability if specific coach is selected
-      if (coach && coach !== 'none' && coach !== 'any') {
+      let coachingFee = 0;
+      if (coach && coach !== 'any') {
         // Get the coach hours from the request body
         // Default to 2 hours if not specified (common case)
         const coachHours = req.body.coachHours || 2;
+        
+        // Get coaching fee from request body or calculate it
+        if (req.body.coachingFee !== undefined) {
+          coachingFee = req.body.coachingFee;
+        } else {
+          // Fetch coach profile to get hourly rate
+          const { data: coachProfiles, error: coachProfileError } = await supabase
+            .from('coach_profiles')
+            .select('hourly_rate, users!inner(name)')
+            .eq('users.name', coach)
+            .single();
+          
+          if (coachProfiles) {
+            coachingFee = coachProfiles.hourly_rate * coachHours;
+          }
+        }
         
         // Calculate the coach's time slot within the booking
         // By default, coaches are needed for the first portion of the session
@@ -571,6 +592,10 @@ export default async function handler(
       // Create booking and update credits in a transaction
       // Note: Supabase doesn't support true transactions, but we can handle this with error checking
       
+      // Set payment status based on whether this is a temporary booking
+      const paymentStatus = isTemporaryBooking ? 'pending' : 
+                           (coachingFee > 0 && req.body.paymentRef ? 'paid' : null);
+      
       // Create booking
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
@@ -579,8 +604,11 @@ export default async function handler(
           simulator_id: simulatorId || availableSimulator,
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
-          coach: coach || 'none',
-          status: 'confirmed',
+          coach: coach || 'any',
+          coaching_fee: coachingFee,
+          payment_ref: req.body.paymentRef, // Include payment reference if available
+          payment_status: paymentStatus,
+          status: isTemporaryBooking ? 'pending' : 'confirmed',
           updated_at: new Date().toISOString()
         })
         .select()
@@ -590,29 +618,37 @@ export default async function handler(
         throw bookingError;
       }
       
-      // Update user credits
-      const { data: updatedCredits, error: updateCreditsError } = await supabase
-        .from('credits')
-        .update({ 
-          simulator_hours: availableCredits - bookingHours 
-        })
-        .eq('user_id', userId)
-        .select()
-        .single();
+      // Only update credits if this is not a temporary booking
+      let updatedCredits = { simulator_hours: availableCredits };
       
-      if (updateCreditsError) {
-        // If updating credits fails, delete the booking to maintain consistency
-        await supabase
-          .from('bookings')
-          .delete()
-          .eq('id', booking.id);
+      if (!isTemporaryBooking) {
+        // Update user credits
+        const { data: credits, error: updateCreditsError } = await supabase
+          .from('credits')
+          .update({ 
+            simulator_hours: availableCredits - bookingHours 
+          })
+          .eq('user_id', userId)
+          .select()
+          .single();
         
-        throw updateCreditsError;
+        if (updateCreditsError) {
+          // If updating credits fails, delete the booking to maintain consistency
+          await supabase
+            .from('bookings')
+            .delete()
+            .eq('id', booking.id);
+          
+          throw updateCreditsError;
+        }
+        
+        updatedCredits = credits;
       }
       
       return res.status(201).json({ 
         id: booking.id,
-        creditsRemaining: updatedCredits.simulator_hours
+        creditsRemaining: updatedCredits.simulator_hours,
+        coachingFee: coachingFee
       });
     } 
     else if (req.method === 'GET') {
@@ -628,6 +664,7 @@ export default async function handler(
           start_time,
           end_time,
           coach,
+          coaching_fee,
           status,
           updated_at,
           cancellation_reason,

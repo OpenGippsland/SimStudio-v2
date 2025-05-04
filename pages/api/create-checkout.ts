@@ -15,8 +15,15 @@ export default async function handler(
       userId, 
       description,
       fromBooking,
-      totalHours  // Extract totalHours from request body
+      totalHours,  // Extract totalHours from request body
+      coachingFee, // Extract coaching fee from request body
+      bookingDetails // Extract booking details from request body
     } = req.body;
+    
+    // Debug logging
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Booking details:', JSON.stringify(bookingDetails, null, 2));
+    console.log('Booking ID:', bookingDetails?.bookingId);
     
     // Parse hours from description if totalHours is not provided
     let hours = totalHours;
@@ -74,7 +81,11 @@ export default async function handler(
           is_authenticated: 'true',
           reference_id: referenceId,
           hours: hours.toString(),  // Include hours in metadata
-          amount: amount.toString() // Include amount in metadata
+          amount: amount.toString(), // Include amount in metadata
+          has_coaching_fee: coachingFee ? 'true' : 'false', // Include coaching fee flag
+          coaching_fee: coachingFee ? coachingFee.toString() : '0', // Include coaching fee amount
+          coach_id: bookingDetails?.coach || '', // Include coach ID if available
+          booking_id: bookingDetails?.bookingId ? bookingDetails.bookingId.toString() : referenceId // Use booking ID if available, otherwise use reference ID
         }
       }
     };

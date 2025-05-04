@@ -155,7 +155,7 @@ export default function BookingPage() {
                     <h2 className="text-2xl font-semibold text-gray-800 mb-6">Book a Simulator</h2>
                     <BookingForm 
                       onSuccess={() => {}} 
-                      selectedUserId={user ? user.id.toString() : ''} 
+                      selectedUserId={user ? user.id.toString() : ''}
                     />
                   </div>
                 )}

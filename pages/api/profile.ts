@@ -47,19 +47,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { firstName, lastName, email } = req.body;
       
       if (firstName || lastName) {
-        // In a real implementation, we would update the user's name in the database
-        // For now, we'll just return a success response
-        
         // Construct the full name
         const fullName = [firstName, lastName].filter(Boolean).join(' ');
         
         console.log(`Updating user name to: ${fullName}`);
         
-        // Return the updated user with the name
-        return res.status(200).json({
-          ...user,
-          name: fullName || null
-        });
+        try {
+          // Use regular supabase client for database operations
+          const { data: updatedUser, error } = await supabase
+            .from('users')
+            .update({ 
+              name: fullName,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id)
+            .select()
+            .single();
+          
+          if (error) {
+            console.error('Error updating user name:', error);
+            return res.status(500).json({ error: 'Failed to update user name in database' });
+          }
+          
+          // Log the updated user for debugging
+          console.log('Updated user in database:', updatedUser);
+          
+          // Also update the NextAuth session user
+          // This is handled by the refreshUser function in AuthContext
+          
+          // Return the updated user
+          return res.status(200).json(updatedUser);
+        } catch (updateError) {
+          console.error('Exception updating user name:', updateError);
+          return res.status(500).json({ error: 'Exception occurred while updating user name' });
+        }
       }
       
       return res.status(200).json(user);

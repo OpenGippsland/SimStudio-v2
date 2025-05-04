@@ -81,8 +81,6 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 heading-font">New Booking</h2>
-      
       <div className="mb-6">
         <label className="block text-gray-700 font-medium mb-3">Simulator Duration:</label>
         <PillSelector
@@ -118,7 +116,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
         </>
       )}
       
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         {selectedUserCredits !== null ? (
           <>
             <p className="text-gray-800 font-medium">

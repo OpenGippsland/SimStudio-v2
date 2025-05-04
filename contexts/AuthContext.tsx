@@ -182,7 +182,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (nextAuthSession?.user?.email) {
         console.log('AuthContext: Refreshing user data');
-        await syncUserWithDatabase(nextAuthSession.user.email);
+        
+        // Get the latest user data from the database
+        const refreshedUser = await getUserByEmail(nextAuthSession.user.email);
+        
+        if (refreshedUser) {
+          console.log('AuthContext: User data refreshed:', refreshedUser);
+          
+          // Update the local user state with the refreshed data
+          setUser(refreshedUser as SimStudioUser);
+          
+          // We don't force a page reload as it causes infinite loops
+          // Instead, we rely on the local state update
+        } else {
+          console.error('AuthContext: Failed to refresh user data - user not found');
+        }
       }
     } catch (error) {
       console.error('AuthContext: Error refreshing user:', error);

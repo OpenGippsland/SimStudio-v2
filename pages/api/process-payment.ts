@@ -119,8 +119,8 @@ export default async function handler(
     
     const payment = paymentData.payment;
     
-    // Calculate hours based on amount (example: $50 per hour)
-    const hours = Math.floor(amount / 50);
+    // Use coachHours if provided, otherwise calculate based on amount
+    const hours = coachHours || Math.floor(amount / 50);
     
     // Only add credits to user account if not a guest user
     if (!isGuestUser) {
@@ -185,7 +185,7 @@ export default async function handler(
     // Default to 2 hours if amount is not available
     const defaultAmount = 100; // $100 = 2 hours
     const safeAmount = req.body?.amount || defaultAmount;
-    const hours = Math.floor(safeAmount / 50);
+    const hours = req.body?.coachHours || Math.floor(safeAmount / 50);
     
     return res.status(200).json({
       success: true,

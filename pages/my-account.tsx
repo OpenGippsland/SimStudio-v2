@@ -101,9 +101,13 @@ const MyAccountPage = () => {
       fetchCoachProfile();
       
       // Initialize form data with user info
+      // Prefer user.name from the database over authUser.name from NextAuth
+      const fullName = user?.name || authUser?.name || '';
+      const nameParts = fullName.split(' ');
+      
       setFormData({
-        firstName: authUser?.name?.split(' ')[0] || '',
-        lastName: authUser?.name?.split(' ')[1] || '',
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
         email: user.email || ''
       });
     }
@@ -556,9 +560,11 @@ const MyAccountPage = () => {
                       });
                       
                       if (response.ok) {
-                        // Refresh user data
+                        // Refresh user data and force a page reload
+                        // This will update both the database and the NextAuth session
                         await refreshUser();
                         
+                        // These settings will apply before the page reloads
                         setMessage({
                           type: 'success',
                           text: 'Account details updated successfully'
@@ -647,10 +653,13 @@ const MyAccountPage = () => {
                         onClick={() => {
                           setIsEditing(false);
                           setMessage(null);
-                          // Reset form data
+                          // Reset form data with the latest user info
+                          const fullName = user?.name || authUser?.name || '';
+                          const nameParts = fullName.split(' ');
+                          
                           setFormData({
-                            firstName: authUser?.name?.split(' ')[0] || '',
-                            lastName: authUser?.name?.split(' ')[1] || '',
+                            firstName: nameParts[0] || '',
+                            lastName: nameParts.slice(1).join(' ') || '',
                             email: user.email || ''
                           });
                         }}
@@ -673,7 +682,7 @@ const MyAccountPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <p className="text-gray-600 text-sm">Name</p>
-                        <p className="font-medium">{authUser?.name || 'Not set'}</p>
+                        <p className="font-medium">{user?.name || authUser?.name || 'Not set'}</p>
                       </div>
                       
                       <div>

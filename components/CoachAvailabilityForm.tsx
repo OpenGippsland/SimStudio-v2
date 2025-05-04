@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react'
 
+interface CoachProfile {
+  id: number;
+  user_id: string;
+  hourly_rate: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  users: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export default function CoachAvailabilityForm() {
   const [availability, setAvailability] = useState<any[]>([])
-  const [coachId, setCoachId] = useState('CB')
+  const [coachId, setCoachId] = useState('')
   const [day, setDay] = useState(1)
   const [startHour, setStartHour] = useState(9)
   const [endHour, setEndHour] = useState(17)
   const [message, setMessage] = useState('')
   const [newCoachId, setNewCoachId] = useState('')
-  const [coaches, setCoaches] = useState(['CB', 'AD', 'Sarkit', 'Fuck Face'])
+  const [coaches, setCoaches] = useState<string[]>([])
+  const [coachProfiles, setCoachProfiles] = useState<CoachProfile[]>([])
 
   const fetchAvailability = async () => {
     try {
@@ -20,47 +35,33 @@ export default function CoachAvailabilityForm() {
     }
   }
 
+  const fetchCoachProfiles = async () => {
+    try {
+      const res = await fetch('/api/coach-profiles')
+      const data = await res.json()
+      setCoachProfiles(data)
+      
+      // Extract coach names from profiles
+      const coachNames = data.map((profile: CoachProfile) => profile.users.name)
+      setCoaches(coachNames)
+      
+      // Set default coach ID if available
+      if (coachNames.length > 0 && !coachId) {
+        setCoachId(coachNames[0])
+      }
+    } catch (error) {
+      console.error('Error fetching coach profiles:', error)
+    }
+  }
+
+  // This function is now disabled as coaches should be added through the admin panel
   const addCoach = () => {
-    if (!newCoachId.trim()) {
-      setMessage('Error: Coach ID cannot be empty')
-      return
-    }
-    
-    if (coaches.includes(newCoachId.trim())) {
-      setMessage('Error: Coach ID already exists')
-      return
-    }
-    
-    setCoaches([...coaches, newCoachId.trim()])
-    setNewCoachId('')
-    setMessage('Coach added successfully')
+    setMessage('Error: Coaches should be added through the Admin Panel > Coach Profiles')
   }
   
+  // This function is now disabled as coaches should be managed through the admin panel
   const deleteCoach = async (coachToDelete: string) => {
-    try {
-      setMessage('')
-      
-      // Filter out the coach from the coaches array
-      setCoaches(coaches.filter(coach => coach !== coachToDelete))
-      
-      // Get all availability entries for this coach
-      const coachAvailability = availability.filter(avail => avail.coach_id === coachToDelete)
-      
-      // Delete each availability entry from the database
-      for (const avail of coachAvailability) {
-        await fetch(`/api/coach-availability?id=${avail.id}`, {
-          method: 'DELETE'
-        })
-      }
-      
-      // Update the local availability state
-      setAvailability(availability.filter(avail => avail.coach_id !== coachToDelete))
-      
-      setMessage(`Coach ${coachToDelete} deleted successfully`)
-    } catch (error) {
-      console.error('Error deleting coach:', error)
-      setMessage('An error occurred while deleting coach')
-    }
+    setMessage('Error: Coaches should be managed through the Admin Panel > Coach Profiles')
   }
   
   const deleteAvailability = async (id: number) => {
@@ -114,6 +115,7 @@ export default function CoachAvailabilityForm() {
 
   useEffect(() => {
     fetchAvailability()
+    fetchCoachProfiles()
   }, [])
 
   return (

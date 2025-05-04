@@ -222,67 +222,6 @@ export default function UserManager() {
         </div>
       )}
 
-      {/* Edit User Form */}
-      {editingUser && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-medium mb-4">Edit User: {editingUser.email}</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleFormChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                />
-              </div>
-              
-              <div className="flex flex-col justify-end">
-                <div className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    name="is_coach"
-                    checked={formData.is_coach}
-                    onChange={handleFormChange}
-                    className="mr-2"
-                  />
-                  <label className="text-gray-700">Coach</label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="is_admin"
-                    checked={formData.is_admin}
-                    onChange={handleFormChange}
-                    className="mr-2"
-                  />
-                  <label className="text-gray-700">Admin</label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg"
-              >
-                Save Changes
-              </button>
-              
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
       
       {/* Users Table */}
       {loading ? (
@@ -305,50 +244,118 @@ export default function UserManager() {
             </thead>
             <tbody>
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b">
-                  <td className="p-2">{user.id}</td>
-                  <td className="p-2">{user.email}</td>
-                  <td className="p-2">{user.name || '-'}</td>
-                  <td className="p-2">
-                    {user.is_admin ? (
-                      <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                        No
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    {user.is_coach ? (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                        No
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-2">{user.simulator_hours} hours</td>
-                  <td className="p-2">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditClick(user)}
-                        className="text-simstudio-yellow hover:text-yellow-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <React.Fragment key={user.id}>
+                  <tr className="border-b">
+                    <td className="p-2">{user.id}</td>
+                    <td className="p-2">{user.email}</td>
+                    <td className="p-2">{user.name || '-'}</td>
+                    <td className="p-2">
+                      {user.is_admin ? (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                          No
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {user.is_coach ? (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                          No
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-2">{user.simulator_hours} hours</td>
+                    <td className="p-2">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditClick(user)}
+                          className="text-simstudio-yellow hover:text-yellow-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  {/* Edit User Form Row */}
+                  {editingUser && editingUser.id === user.id && (
+                    <tr>
+                      <td colSpan={7} className="p-0 border-b">
+                        <div className="p-4 bg-gray-50 border-t border-gray-200">
+                          <h3 className="text-lg font-medium mb-4">Edit User: {editingUser.email}</h3>
+                          <form onSubmit={handleSubmit}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <label className="block text-gray-700 mb-2">Name</label>
+                                <input
+                                  type="text"
+                                  name="name"
+                                  value={formData.name}
+                                  onChange={handleFormChange}
+                                  className="w-full p-2 border border-gray-300 rounded"
+                                />
+                              </div>
+                              
+                              <div className="flex flex-col justify-end">
+                                <div className="flex items-center mb-2">
+                                  <input
+                                    type="checkbox"
+                                    name="is_coach"
+                                    checked={formData.is_coach}
+                                    onChange={handleFormChange}
+                                    className="mr-2"
+                                  />
+                                  <label className="text-gray-700">Coach</label>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    name="is_admin"
+                                    checked={formData.is_admin}
+                                    onChange={handleFormChange}
+                                    className="mr-2"
+                                  />
+                                  <label className="text-gray-700">Admin</label>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex space-x-2">
+                              <button
+                                type="submit"
+                                className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg"
+                              >
+                                Save Changes
+                              </button>
+                              
+                              <button
+                                type="button"
+                                onClick={handleCancel}
+                                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

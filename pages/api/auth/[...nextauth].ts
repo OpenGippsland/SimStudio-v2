@@ -105,9 +105,16 @@ export const authOptions: NextAuthOptions = {
               return null;
             }
             
+            // Construct name if firstName and lastName are provided
+            let name = null;
+            if (credentials.firstName) {
+              name = `${credentials.firstName} ${credentials.lastName || ''}`.trim();
+            }
+            
             // Create user in our database
             const newUser = await createUser({ 
               email: credentials.email,
+              name: name
             });
             
             console.log('User created in database:', newUser.id);

@@ -1,36 +1,89 @@
 import React, { useState, useEffect } from 'react'
 
+interface CoachProfile {
+  id: number;
+  user_id: string;
+  hourly_rate: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  users: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export default function CoachAvailability() {
   const [availability, setAvailability] = useState<any[]>([])
-  const [coachId, setCoachId] = useState('CB')
+  const [coachId, setCoachId] = useState('')
   const [day, setDay] = useState(1)
   const [startHour, setStartHour] = useState(9)
   const [endHour, setEndHour] = useState(17)
+  const [coachProfiles, setCoachProfiles] = useState<CoachProfile[]>([])
+  const [message, setMessage] = useState('')
 
   const fetchAvailability = async () => {
-    const res = await fetch('/api/coach-availability')
-    const data = await res.json()
-    setAvailability(data)
+    try {
+      const res = await fetch('/api/coach-availability?format=raw')
+      const data = await res.json()
+      setAvailability(data)
+    } catch (error) {
+      console.error('Error fetching coach availability:', error)
+    }
+  }
+
+  const fetchCoachProfiles = async () => {
+    try {
+      const res = await fetch('/api/coach-profiles')
+      const data = await res.json()
+      setCoachProfiles(data)
+      
+      // Set default coach ID if available
+      if (data.length > 0 && !coachId) {
+        setCoachId(data[0].users.name)
+      }
+    } catch (error) {
+      console.error('Error fetching coach profiles:', error)
+    }
   }
 
   const addAvailability = async () => {
-    await fetch('/api/coach-availability', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        coachId,
-        dayOfWeek: day,
-        startHour,
-        endHour
+    if (!coachId) {
+      setMessage('Please select a coach')
+      return
+    }
+    
+    try {
+      const res = await fetch('/api/coach-availability', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          coachId,
+          dayOfWeek: day,
+          startHour,
+          endHour
+        })
       })
-    })
-    fetchAvailability()
+      
+      if (res.ok) {
+        setMessage('Coach availability added successfully')
+        fetchAvailability()
+      } else {
+        const errorData = await res.json()
+        setMessage(`Error: ${errorData.error || 'Failed to add coach availability'}`)
+      }
+    } catch (error) {
+      console.error('Error adding coach availability:', error)
+      setMessage('An error occurred while adding coach availability')
+    }
   }
 
   useEffect(() => {
     fetchAvailability()
+    fetchCoachProfiles()
   }, [])
 
   return (
@@ -47,10 +100,15 @@ export default function CoachAvailability() {
               onChange={(e) => setCoachId(e.target.value)}
               className="w-full p-2 border rounded"
             >
-              <option value="CB">CB</option>
-              <option value="AD">AD</option>
-              <option value="Sarkit">Sarkit</option>
-              <option value="Fuck Face">Fuck Face</option>
+              {coachProfiles.length === 0 ? (
+                <option value="">No coaches available</option>
+              ) : (
+                coachProfiles.map((profile) => (
+                  <option key={profile.id} value={profile.users.name}>
+                    {profile.users.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
           <div>
@@ -71,25 +129,27 @@ export default function CoachAvailability() {
           </div>
           <div>
             <label className="block mb-2">Start Hour</label>
-            <input
-              type="number"
-              min="0"
-              max="23"
+            <select
               value={startHour}
               onChange={(e) => setStartHour(Number(e.target.value))}
               className="w-full p-2 border rounded"
-            />
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>{i}:00</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block mb-2">End Hour</label>
-            <input
-              type="number"
-              min="0"
-              max="23"
+            <select
               value={endHour}
               onChange={(e) => setEndHour(Number(e.target.value))}
               className="w-full p-2 border rounded"
-            />
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>{i}:00</option>
+              ))}
+            </select>
           </div>
         </div>
         <button
@@ -98,30 +158,40 @@ export default function CoachAvailability() {
         >
           Add Availability
         </button>
+        
+        {message && (
+          <div className={`mt-4 p-2 rounded ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+            {message}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded shadow overflow-hidden">
         <h2 className="text-lg font-semibold p-4 border-b">Current Availability</h2>
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-3 text-left">Coach</th>
-              <th className="p-3 text-left">Day</th>
-              <th className="p-3 text-left">Hours</th>
-            </tr>
-          </thead>
-          <tbody>
-            {availability.map((avail) => (
-              <tr key={avail.id} className="border-b">
-                <td className="p-3">{avail.coach_id}</td>
-                <td className="p-3">
-                  {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][avail.day_of_week]}
-                </td>
-                <td className="p-3">{avail.start_hour}:00 - {avail.end_hour}:00</td>
+        {availability.length > 0 ? (
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-3 text-left">Coach</th>
+                <th className="p-3 text-left">Day</th>
+                <th className="p-3 text-left">Hours</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {availability.map((avail) => (
+                <tr key={avail.id} className="border-b">
+                  <td className="p-3">{avail.coach_id}</td>
+                  <td className="p-3">
+                    {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][avail.day_of_week]}
+                  </td>
+                  <td className="p-3">{avail.start_hour}:00 - {avail.end_hour}:00</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="p-4 text-gray-500">No coach availability configured</p>
+        )}
       </div>
     </div>
   )

@@ -274,17 +274,57 @@ export default async function handler(
         return res.status(400).json({ error: 'User ID is required' })
       }
 
-      // Delete user
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', parseInt(id));
-      
-      if (error) {
+      // Start a transaction to delete related records first
+      try {
+        // 1. Delete related credits records
+        const { error: creditsError } = await supabase
+          .from('credits')
+          .delete()
+          .eq('user_id', parseInt(id));
+        
+        if (creditsError) {
+          console.error('Error deleting credits:', creditsError);
+          throw creditsError;
+        }
+
+        // 2. Check for and delete any coach profiles
+        const { error: coachProfileError } = await supabase
+          .from('coach_profiles')
+          .delete()
+          .eq('user_id', parseInt(id));
+        
+        if (coachProfileError && coachProfileError.code !== 'PGRST116') {
+          console.error('Error deleting coach profile:', coachProfileError);
+          throw coachProfileError;
+        }
+
+        // 3. Check for and delete any bookings
+        const { error: bookingsError } = await supabase
+          .from('bookings')
+          .delete()
+          .eq('user_id', parseInt(id));
+        
+        if (bookingsError && bookingsError.code !== 'PGRST116') {
+          console.error('Error deleting bookings:', bookingsError);
+          throw bookingsError;
+        }
+
+        // 4. Finally delete the user
+        const { error } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', parseInt(id));
+        
+        if (error) {
+          console.error('Error deleting user:', error);
+          throw error;
+        }
+        
+        return res.status(200).json({ message: 'User deleted successfully' });
+      } catch (error) {
+        console.error('Transaction error:', error);
         throw error;
       }
-      
-      return res.status(200).json({ message: 'User deleted successfully' })
     }
     else {
       res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE'])

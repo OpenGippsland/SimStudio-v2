@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '../../lib/supabase';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from './auth/[...nextauth]';
 import { createOrUpdateSquareCustomer } from '../../lib/square-customer';
+import { getUserCredits, updateUserCredits } from '../../lib/db-supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -29,7 +31,7 @@ export default async function handler(
     
     // If the user is authenticated, get their session and create/update Square customer
     if (isAuthenticated) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getServerSession(req, res, authOptions);
       
       if (session?.user) {
         try {
@@ -111,40 +113,19 @@ export default async function handler(
     
     // Only add credits to user account if not a guest user
     if (!isGuestUser) {
-      const { data: currentCredits, error: creditsError } = await supabase
-        .from('credits')
-        .select('simulator_hours')
-        .eq('user_id', userId)
-        .single();
-      
-      if (creditsError && creditsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        throw creditsError;
-      }
-      
-      if (currentCredits) {
-        // Update existing credits
-        const { error: updateError } = await supabase
-          .from('credits')
-          .update({ 
-            simulator_hours: currentCredits.simulator_hours + hours 
-          })
-          .eq('user_id', userId);
+      try {
+        // Get current credits
+        const currentCredits = await getUserCredits(parseInt(userId));
         
-        if (updateError) {
-          throw updateError;
-        }
-      } else {
-        // Insert new credits record
-        const { error: insertError } = await supabase
-          .from('credits')
-          .insert({ 
-            user_id: userId, 
-            simulator_hours: hours 
-          });
+        // Update credits
+        await updateUserCredits(parseInt(userId), { 
+          simulator_hours: (currentCredits?.simulator_hours || 0) + hours 
+        });
         
-        if (insertError) {
-          throw insertError;
-        }
+        console.log('Credits updated for user:', userId);
+      } catch (error) {
+        console.error('Error updating credits:', error);
+        // Continue even if credits update fails
       }
     } else {
       console.log('Guest user payment - credits will be added after account creation');

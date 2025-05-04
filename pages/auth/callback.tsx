@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { supabase } from '../../lib/supabase';
+import { useSession, signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function AuthCallback() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
@@ -24,35 +25,18 @@ export default function AuthCallback() {
         const redirectTo = params.get('redirectTo');
         setRedirectUrl(redirectTo || '/booking');
         
-        // Get the URL hash if it exists
-        const hash = window.location.hash;
-        
-        if (hash) {
-          // Exchange the code for a session
-          const { error } = await supabase.auth.exchangeCodeForSession(hash);
-          
-          if (error) {
-            console.error('Error exchanging code for session:', error);
-            setError('Failed to complete authentication. Please try logging in again.');
-            setLoading(false);
-            clearTimeout(timeoutId);
-            return;
-          }
-        }
-        
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
+        // Check if we have a session
+        if (status === 'authenticated' && session) {
           // Successfully authenticated, redirect
           clearTimeout(timeoutId);
           router.push(redirectTo || '/booking');
-        } else {
+        } else if (status === 'unauthenticated') {
           // No session found, show error
-          setError('No authentication session found. Please try logging in again.');
+          setError('Authentication failed. Please try logging in again.');
           setLoading(false);
           clearTimeout(timeoutId);
         }
+        // If status is 'loading', we'll wait for it to resolve
       } catch (err) {
         console.error('Error in auth callback:', err);
         setError('An error occurred during authentication. Please try again.');
@@ -62,7 +46,7 @@ export default function AuthCallback() {
     };
 
     handleAuthCallback();
-  }, [router]);
+  }, [router, session, status]);
 
   if (loading) {
     return (

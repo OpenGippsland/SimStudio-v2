@@ -112,25 +112,8 @@ export const authOptions: NextAuthOptions = {
             
             console.log('User created in database:', newUser.id);
             
-            // For now, we'll still create the user in Supabase Auth as well
-            // This is temporary during migration
-            if (credentials.password) {
-              try {
-                await supabase.auth.signUp({
-                  email: credentials.email,
-                  password: credentials.password,
-                  options: {
-                    data: {
-                      first_name: credentials.firstName || '',
-                      last_name: credentials.lastName || '',
-                    }
-                  }
-                });
-              } catch (error) {
-                console.error('Error creating user in Supabase Auth (non-critical):', error);
-                // Continue even if Supabase Auth creation fails
-              }
-            }
+            // We no longer need to create users in Supabase Auth
+            // as we've fully migrated to NextAuth
             
             return {
               id: String(newUser.id),

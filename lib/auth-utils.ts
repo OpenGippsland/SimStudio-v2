@@ -1,43 +1,46 @@
-import { supabase } from './supabase';
+import { signIn } from 'next-auth/react';
 
 /**
- * Utility function to handle login for accounts that might require email confirmation
- * This tries to log in normally first, and if that fails with an email confirmation error,
+ * Utility function to handle login with NextAuth
+ * This tries to log in with credentials first, and if that fails,
  * it tries to use a magic link as a fallback
  */
 export async function loginWithFallback(email: string, password: string): Promise<any> {
   try {
-    // First, try normal login
-    const result = await supabase.auth.signInWithPassword({
+    // First, try normal login with credentials
+    const result = await signIn('credentials', {
       email,
-      password
+      password,
+      mode: 'login',
+      redirect: false,
     });
     
     // If login succeeded, return the result
-    if (!result.error) {
+    if (!result?.error) {
       console.log('Login successful for:', email);
-      return result;
+      return {
+        data: { 
+          user: { email },
+          session: true
+        },
+        error: null
+      };
     }
     
-    // If the error is not about email confirmation, return the error
-    if (!result.error.message.includes('Email not confirmed')) {
-      console.error('Login failed with error:', result.error.message);
-      return result;
-    }
+    console.log('Login failed, trying magic link fallback for:', email);
     
-    console.log('Email not confirmed, trying magic link fallback for:', email);
-    
-    // If the error is about email confirmation, try magic link as fallback
-    const magicLinkResult = await supabase.auth.signInWithOtp({
+    // If credentials login failed, try magic link
+    const magicLinkResult = await signIn('email', {
       email,
-      options: {
-        shouldCreateUser: false // Don't create a new user if one doesn't exist
-      }
+      redirect: false,
     });
     
-    if (magicLinkResult.error) {
-      console.error('Magic link fallback failed:', magicLinkResult.error.message);
-      return magicLinkResult;
+    if (magicLinkResult?.error) {
+      console.error('Magic link fallback failed:', magicLinkResult.error);
+      return {
+        data: { user: null, session: null },
+        error: { message: magicLinkResult.error }
+      };
     }
     
     console.log('Magic link sent successfully to:', email);
@@ -61,7 +64,7 @@ export async function loginWithFallback(email: string, password: string): Promis
 }
 
 /**
- * Utility function to create a new account without requiring email confirmation
+ * Utility function to create a new account with NextAuth
  */
 export async function createAccountWithoutConfirmation(
   email: string, 
@@ -69,41 +72,31 @@ export async function createAccountWithoutConfirmation(
   userData: Record<string, any> = {}
 ): Promise<any> {
   try {
-    // Create a new account with auto-confirmation
-    const { data, error } = await supabase.auth.signUp({
+    // Create a new account using NextAuth credentials provider in register mode
+    const result = await signIn('credentials', {
       email,
       password,
-      options: {
-        emailRedirectTo: undefined, // Don't redirect for email confirmation
-        data: userData
-      }
+      firstName: userData.first_name || '',
+      lastName: userData.last_name || '',
+      mode: 'register',
+      redirect: false,
     });
     
-    if (error) {
-      console.error('Error creating account:', error);
-      return { error };
+    if (result?.error) {
+      console.error('Error creating account:', result.error);
+      return { 
+        error: { message: result.error }
+      };
     }
     
-    // If account creation succeeded, try to immediately sign in
-    if (data.user) {
-      console.log('Account created successfully, attempting immediate login for:', email);
-      
-      const signInResult = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (signInResult.error) {
-        console.error('Auto-login failed after account creation:', signInResult.error);
-        // Return the original result anyway
-        return { data };
-      }
-      
-      console.log('Auto-login successful after account creation for:', email);
-      return signInResult;
-    }
-    
-    return { data };
+    console.log('Account created successfully for:', email);
+    return {
+      data: { 
+        user: { email },
+        session: true
+      },
+      error: null
+    };
   } catch (error: any) {
     console.error('Error in createAccountWithoutConfirmation:', error);
     return { 

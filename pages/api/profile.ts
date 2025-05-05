@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       // Update user in NextAuth
-      const { firstName, lastName, email } = req.body;
+      const { firstName, lastName, email, mobileNumber } = req.body;
       
       if (firstName || lastName) {
         // Construct the full name
@@ -58,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .from('users')
             .update({ 
               name: fullName,
+              mobile_number: mobileNumber,
               updated_at: new Date().toISOString()
             })
             .eq('id', user.id)

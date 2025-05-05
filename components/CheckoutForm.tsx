@@ -65,6 +65,15 @@ export default function CheckoutForm({
       setLoading(true);
       setError('');
       
+      // Get user information from auth context
+      const userInfo = {
+        email: user?.email || authUser?.email || '',
+        firstName: user?.name?.split(' ')[0] || '',
+        lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+        phoneNumber: user?.mobile_number || '' // Use the mobile_number field from the users table
+        // Note: Make sure phone numbers are in international format for Australia (e.g., +61XXXXXXXXX)
+      };
+      
       // Create checkout session
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
@@ -84,7 +93,8 @@ export default function CheckoutForm({
           bookingDetails: {
             ...bookingDetails,
             bookingId: bookingDetails?.bookingId
-          } // Pass the booking details with booking ID
+          }, // Pass the booking details with booking ID
+          userInfo: userInfo, // Add user information
         })
       });
       

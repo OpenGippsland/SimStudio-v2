@@ -475,9 +475,9 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         }
       }
       
-      // If there's a coaching fee and it hasn't been paid yet, create a temporary booking and redirect to cart page for payment
+      // If there's a coaching fee and it hasn't been paid yet, create a temporary booking and redirect directly to Square checkout
       if (coachingFee > 0 && !formData.paidCoachingFee) {
-        console.log('Creating temporary booking and redirecting to cart for coaching fee:', coachingFee);
+        console.log('Creating temporary booking and redirecting to Square checkout for coaching fee:', coachingFee);
         
         // Create a temporary booking to get a booking ID
         const tempBookingResponse = await fetch('/api/bookings', {
@@ -493,7 +493,8 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
             coach: selectedCoach,
             coachHours: formData.coachHours,
             coachingFee: coachingFee,
-            payment_status: 'pending' // Mark as pending payment
+            payment_status: 'pending', // Mark as pending payment
+            isTemporaryBooking: true // Flag to bypass credit check
           })
         });
         
@@ -510,20 +511,56 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         // Format time for URL
         const time = new Date(selectedSession.startTime).toTimeString().split(' ')[0].substring(0, 5);
         
-        router.push({
-          pathname: '/cart',
-          query: { 
-            hours: formData.hours,
+        // Get user information for checkout
+        const usersResponse = await fetch('/api/users');
+        const usersData = await usersResponse.json();
+        const selectedUser = usersData.find(user => user.id.toString() === formData.userId);
+        
+        if (!selectedUser) {
+          throw new Error('User information not found');
+        }
+        
+        // Prepare user info for Square checkout
+        const userInfo = {
+          email: selectedUser.email || '',
+          firstName: selectedUser.name?.split(' ')[0] || '',
+          lastName: selectedUser.name?.split(' ').slice(1).join(' ') || '',
+          phoneNumber: selectedUser.mobile_number || ''
+        };
+        
+        // Create checkout session directly with Square
+        const response = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            amount: coachingFee,
             userId: formData.userId,
-            date: formData.date,
-            time: time,
-            coach: selectedCoach,
-            coachingFee: coachingFee,
+            isAuthenticated: true,
+            description: `SimStudio Coaching Fee - ${formData.coachHours} hour${formData.coachHours > 1 ? 's' : ''} with ${selectedCoach}`,
             fromBooking: true,
-            bookingId: bookingId, // Pass the booking ID to the cart
-            message: `Your booking includes a coaching fee of $${coachingFee.toFixed(2)}.`
-          }
+            totalHours: 0, // No simulator hours being purchased, just coaching fee
+            coachingFee: coachingFee,
+            bookingDetails: {
+              date: formData.date,
+              time: time,
+              coach: selectedCoach,
+              bookingId: bookingId
+            },
+            userInfo: userInfo
+          })
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create checkout');
+        }
+        
+        const data = await response.json();
+        
+        // Redirect to Square Checkout
+        window.location.href = data.checkoutUrl;
         return;
       }
       

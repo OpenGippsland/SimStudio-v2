@@ -8,6 +8,7 @@ interface User {
   is_coach?: boolean;
   is_admin?: boolean;
   simulator_hours: number;
+  mobile_number?: string;
 }
 
 export default function UserManager() {
@@ -24,7 +25,8 @@ export default function UserManager() {
   const [formData, setFormData] = useState({
     name: '',
     is_coach: false,
-    is_admin: false
+    is_admin: false,
+    mobile_number: ''
   })
 
   const fetchUsers = async () => {
@@ -73,7 +75,8 @@ export default function UserManager() {
     setFormData({
       name: user.name || '',
       is_coach: user.is_coach || false,
-      is_admin: user.is_admin || false
+      is_admin: user.is_admin || false,
+      mobile_number: user.mobile_number || ''
     })
   }
 
@@ -236,6 +239,7 @@ export default function UserManager() {
                 <th className="p-2 text-left">ID</th>
                 <th className="p-2 text-left">Email</th>
                 <th className="p-2 text-left">Name</th>
+                <th className="p-2 text-left">Mobile</th>
                 <th className="p-2 text-left">Admin</th>
                 <th className="p-2 text-left">Coach</th>
                 <th className="p-2 text-left">Credits</th>
@@ -249,6 +253,7 @@ export default function UserManager() {
                     <td className="p-2">{user.id}</td>
                     <td className="p-2">{user.email}</td>
                     <td className="p-2">{user.name || '-'}</td>
+                    <td className="p-2">{user.mobile_number || '-'}</td>
                     <td className="p-2">
                       {user.is_admin ? (
                         <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
@@ -306,6 +311,18 @@ export default function UserManager() {
                                   value={formData.name}
                                   onChange={handleFormChange}
                                   className="w-full p-2 border border-gray-300 rounded"
+                                />
+                              </div>
+                              
+                              <div>
+                                <label className="block text-gray-700 mb-2">Mobile Number</label>
+                                <input
+                                  type="tel"
+                                  name="mobile_number"
+                                  value={formData.mobile_number}
+                                  onChange={handleFormChange}
+                                  className="w-full p-2 border border-gray-300 rounded"
+                                  placeholder="Enter mobile number"
                                 />
                               </div>
                               

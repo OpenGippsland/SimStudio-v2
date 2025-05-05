@@ -72,6 +72,29 @@ export const authOptions: NextAuthOptions = {
         },
       },
       from: process.env.EMAIL_FROM || 'noreply@simstudio.com',
+      async generateVerificationToken() {
+        // Generate a random string that will be used for verification
+        return [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+      },
+      async sendVerificationRequest({ identifier, url, provider }) {
+        // Extract mobileNumber from the query parameters in the URL
+        const urlObj = new URL(url);
+        const mobileNumber = urlObj.searchParams.get('mobileNumber');
+        
+        // Get the base URL from the URL object
+        const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+        
+        // Send the email
+        await fetch(`${baseUrl}/api/auth/email-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: identifier, 
+            url, 
+            mobileNumber
+          }),
+        });
+      },
     }),
     
     // Credentials Provider (for email/password)
@@ -84,6 +107,7 @@ export const authOptions: NextAuthOptions = {
         mode: { label: "Mode", type: "text" }, // 'login' or 'register'
         firstName: { label: "First Name", type: "text" },
         lastName: { label: "Last Name", type: "text" },
+        mobileNumber: { label: "Mobile Number", type: "tel" },
       },
       async authorize(credentials, req) {
         console.log('CredentialsProvider authorize called with mode:', credentials?.mode);
@@ -114,7 +138,8 @@ export const authOptions: NextAuthOptions = {
             // Create user in our database
             const newUser = await createUser({ 
               email: credentials.email,
-              name: name
+              name: name,
+              mobile_number: credentials.mobileNumber || null
             });
             
             console.log('User created in database:', newUser.id);

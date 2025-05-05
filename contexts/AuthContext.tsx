@@ -11,6 +11,7 @@ interface SimStudioUser {
   name: string | null;
   is_coach: boolean | null;
   is_admin: boolean | null;
+  mobile_number: string | null;
 }
 
 interface NextAuthUser {

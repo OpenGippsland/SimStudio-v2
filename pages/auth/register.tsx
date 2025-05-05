@@ -13,7 +13,8 @@ export default function Register() {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    mobileNumber: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -113,6 +114,7 @@ export default function Register() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        mobileNumber: formData.mobileNumber,
         mode: 'register',
         callbackUrl,
         redirect: false,
@@ -194,6 +196,18 @@ export default function Register() {
                   placeholder="Last Name"
                 />
               </div>
+            </div>
+            <div className="mb-3">
+              <label htmlFor="mobileNumber" className="sr-only">Mobile Number</label>
+              <input
+                id="mobileNumber"
+                name="mobileNumber"
+                type="tel"
+                value={formData.mobileNumber}
+                onChange={handleChange}
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
+                placeholder="Mobile Number"
+              />
             </div>
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>
@@ -281,6 +295,7 @@ export default function Register() {
                   // Use NextAuth's signIn method with email provider
                   const result = await signIn('email', {
                     email: formData.email,
+                    mobileNumber: formData.mobileNumber,
                     callbackUrl,
                     redirect: false,
                   });

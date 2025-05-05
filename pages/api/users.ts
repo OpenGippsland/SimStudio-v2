@@ -8,6 +8,7 @@ interface ExtendedUser {
   name?: string;
   is_coach?: boolean;
   is_admin?: boolean;
+  mobile_number?: string;
   credits?: {
     simulator_hours: number;
   };
@@ -36,6 +37,7 @@ export default async function handler(
             name,
             is_coach,
             is_admin,
+            mobile_number,
             credits (
               simulator_hours
             )
@@ -60,6 +62,7 @@ export default async function handler(
             name: extendedUser.name || '',
             is_coach: extendedUser.is_coach || false,
             is_admin: extendedUser.is_admin || false,
+            mobile_number: extendedUser.mobile_number || '',
             simulator_hours: extendedUser.credits?.simulator_hours || 0
           };
         });
@@ -82,6 +85,7 @@ export default async function handler(
             name,
             is_coach,
             is_admin,
+            mobile_number,
             credits (
               simulator_hours
             )
@@ -104,6 +108,7 @@ export default async function handler(
           name: extendedUser.name || '',
           is_coach: extendedUser.is_coach || false,
           is_admin: extendedUser.is_admin || false,
+          mobile_number: extendedUser.mobile_number || '',
           simulator_hours: extendedUser.credits?.simulator_hours || 0
         };
         
@@ -153,6 +158,7 @@ export default async function handler(
             name,
             is_coach,
             is_admin,
+            mobile_number,
             credits (
               simulator_hours
             )
@@ -171,6 +177,7 @@ export default async function handler(
             name: extendedUser.name || '',
             is_coach: extendedUser.is_coach || false,
             is_admin: extendedUser.is_admin || false,
+            mobile_number: extendedUser.mobile_number || '',
             simulator_hours: extendedUser.credits?.simulator_hours || 0
           };
         });
@@ -222,7 +229,7 @@ export default async function handler(
     // PUT - Update a user
     else if (req.method === 'PUT') {
       const { id } = req.query
-      const { name, is_coach, is_admin } = req.body
+      const { name, is_coach, is_admin, mobile_number } = req.body
       
       if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'User ID is required' })
@@ -254,6 +261,7 @@ export default async function handler(
           name,
           is_coach,
           is_admin,
+          mobile_number,
           updated_at: new Date().toISOString()
         })
         .eq('id', parseInt(id))

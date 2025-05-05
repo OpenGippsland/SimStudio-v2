@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { FormData, Session, SessionDetails, CoachProfile } from '../../lib/booking/types';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface BookingFormStep3Props {
   formData: FormData;
@@ -29,6 +30,8 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
   const router = useRouter();
   const [coachRate, setCoachRate] = useState<number | null>(null);
   const [coachingFee, setCoachingFee] = useState<number | null>(null);
+  const [localError, setLocalError] = useState<string>('');
+  const [localIsSubmitting, setLocalIsSubmitting] = useState<boolean>(false);
   
   // Fetch coach rate if a coach is selected
   useEffect(() => {
@@ -68,11 +71,21 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
     fetchCoachRate();
   }, [formData.coach, formData.coachHours, formData.wantsCoach]);
   
-  // Function to handle redirection to cart for credit purchase or coaching fee
+  // Get user information from auth context
+  const { user, authUser, refreshUser } = useAuth();
+  
+  // Refresh auth state when component mounts
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+  
+  // Function to handle direct checkout with Square
   const handleProceedToCheckout = async () => {
     if (!selectedSession || !sessionDetails) return;
     
     try {
+      setLocalIsSubmitting(true);
+      
       // Calculate how many credits are needed (if any)
       const creditsNeeded = selectedUserCredits !== null ? 
         Math.max(0, sessionDetails.hours - selectedUserCredits) : 
@@ -135,47 +148,54 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
       // Format time for URL
       const time = new Date(selectedSession.startTime).toTimeString().split(' ')[0].substring(0, 5);
       
-      // Determine appropriate message based on what the user needs to purchase
-      let message = '';
-      if (creditsNeeded > 0 && (coachingFee && coachingFee > 0)) {
-        message = `You need to purchase ${creditsNeeded} simulator hours and pay the coaching fee to complete this booking.`;
-      } else if (creditsNeeded > 0) {
-        message = `You need to purchase ${creditsNeeded} simulator hours to complete this booking.`;
-      } else if (coachingFee && coachingFee > 0) {
-        message = `You need to pay the coaching fee to complete this booking.`;
+      // Get user information from auth context
+      const userInfo = {
+        email: user?.email || authUser?.email || '',
+        firstName: user?.name?.split(' ')[0] || '',
+        lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+        phoneNumber: user?.mobile_number || ''
+      };
+      
+      // Create checkout session directly with Square
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: (creditsNeeded * 50) + (coachingFee || 0),
+          userId: formData.userId,
+          isAuthenticated: true,
+          description: coachingFee 
+            ? `SimStudio Booking - ${creditsNeeded} hours + Coaching Fee`
+            : `SimStudio Booking - ${creditsNeeded} hours`,
+          fromBooking: true,
+          totalHours: creditsNeeded,
+          coachingFee: coachingFee,
+          bookingDetails: {
+            date: formData.date,
+            time: time,
+            coach: formData.coach,
+            bookingId: bookingId
+          },
+          userInfo: userInfo
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout');
       }
       
-      // Redirect to cart with booking details
-      router.push({
-        pathname: '/cart',
-        query: {
-          hours: creditsNeeded, // Only include hours that are actually needed
-          userId: formData.userId,
-          date: formData.date,
-          time: time,
-          coach: formData.coach,
-          coachingFee: coachingFee || undefined,
-          fromBooking: true,
-          bookingId: bookingId, // Pass the booking ID to the cart
-          message: message
-        }
-      });
+      const data = await response.json();
+      
+      // Redirect to Square Checkout
+      window.location.href = data.checkoutUrl;
+      
     } catch (error) {
-      console.error('Error creating temporary booking:', error);
-      // If there's an error, still redirect to cart but without booking ID
-      router.push({
-        pathname: '/cart',
-        query: {
-          hours: Math.max(sessionDetails.hours - (selectedUserCredits || 0), 0),
-          userId: formData.userId,
-          date: formData.date,
-          time: new Date(formData.sessionTime).toTimeString().split(' ')[0].substring(0, 5),
-          coach: formData.coach,
-          coachingFee: coachingFee || undefined,
-          fromBooking: true,
-          message: 'You need to purchase credits to complete this booking.'
-        }
-      });
+      console.error('Error creating checkout:', error);
+      setLocalError(error instanceof Error ? error.message : 'An unknown error occurred');
+      setLocalIsSubmitting(false);
     }
   };
   
@@ -282,7 +302,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
                       You need {sessionDetails.hours - selectedUserCredits} more credit hours for this booking.
                     </p>
                     <p className="text-sm text-blue-700 mt-1">
-                      When you click "PROCEED TO CHECKOUT", you'll be taken to the checkout page to purchase the additional credits
+                      When you click "PROCEED TO CHECKOUT", you'll be taken to Square's secure payment page to purchase the additional credits
                       {formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee 
                         ? ' and pay the coaching fee' 
                         : ''}.
@@ -298,9 +318,9 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
         </div>
       )}
       
-      {error && (
+      {(error || localError) && (
         <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
-          {error}
+          {error || localError}
         </div>
       )}
       
@@ -342,14 +362,14 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
                 ? handleProceedToCheckout
                 : handleSubmit
             }
-            disabled={isSubmitting}
+            disabled={isSubmitting || localIsSubmitting}
             className={`py-3 px-6 font-bold rounded-lg transition-colors ${
-              isSubmitting
+              isSubmitting || localIsSubmitting
                 ? 'bg-yellow-300 text-black cursor-not-allowed opacity-70'
                 : 'bg-simstudio-yellow text-black hover:bg-yellow-500'
             }`}
           >
-            {isSubmitting ? 'Processing...' : 
+            {isSubmitting || localIsSubmitting ? 'Processing...' : 
               ((selectedUserCredits !== null && selectedUserCredits < (sessionDetails?.hours || 0)) || 
               (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee)) 
                 ? 'PROCEED TO CHECKOUT' 

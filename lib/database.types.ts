@@ -351,6 +351,7 @@ export interface Database {
           name: string | null
           is_coach: boolean | null
           is_admin: boolean | null
+          mobile_number: string | null
         }
         Insert: {
           created_at?: string | null
@@ -360,6 +361,7 @@ export interface Database {
           name?: string | null
           is_coach?: boolean | null
           is_admin?: boolean | null
+          mobile_number?: string | null
         }
         Update: {
           created_at?: string | null
@@ -369,6 +371,7 @@ export interface Database {
           name?: string | null
           is_coach?: boolean | null
           is_admin?: boolean | null
+          mobile_number?: string | null
         }
         Relationships: []
       }

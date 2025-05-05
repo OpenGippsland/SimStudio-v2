@@ -17,7 +17,8 @@ const MyAccountPage = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: ''
+    email: '',
+    mobileNumber: ''
   });
   const [updateLoading, setUpdateLoading] = useState(false);
 
@@ -108,7 +109,8 @@ const MyAccountPage = () => {
       setFormData({
         firstName: nameParts[0] || '',
         lastName: nameParts.slice(1).join(' ') || '',
-        email: user.email || ''
+        email: user.email || '',
+        mobileNumber: user.mobile_number || ''
       });
     }
   }, [user, authUser]);
@@ -556,6 +558,7 @@ const MyAccountPage = () => {
                           firstName: formData.firstName,
                           lastName: formData.lastName,
                           email: formData.email,
+                          mobileNumber: formData.mobileNumber,
                         }),
                       });
                       
@@ -637,6 +640,21 @@ const MyAccountPage = () => {
                         />
                         <p className="text-xs text-gray-500 mt-1">Email address cannot be changed</p>
                       </div>
+                      
+                      <div className="md:col-span-2">
+                        <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                          Mobile Number
+                        </label>
+                        <input
+                          type="tel"
+                          id="mobileNumber"
+                          value={formData.mobileNumber}
+                          onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})}
+                          placeholder="e.g. +61412345678"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-simstudio-yellow focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Please include country code (e.g. +61 for Australia)</p>
+                      </div>
                     </div>
                     
                     <div className="flex space-x-4">
@@ -660,7 +678,8 @@ const MyAccountPage = () => {
                           setFormData({
                             firstName: nameParts[0] || '',
                             lastName: nameParts.slice(1).join(' ') || '',
-                            email: user.email || ''
+                            email: user.email || '',
+                            mobileNumber: user.mobile_number || ''
                           });
                         }}
                         className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors"
@@ -688,6 +707,11 @@ const MyAccountPage = () => {
                       <div>
                         <p className="text-gray-600 text-sm">Email</p>
                         <p className="font-medium">{user.email}</p>
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <p className="text-gray-600 text-sm">Mobile Number</p>
+                        <p className="font-medium">{user.mobile_number || 'Not set'}</p>
                       </div>
                     </div>
                     

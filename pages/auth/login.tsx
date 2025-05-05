@@ -10,7 +10,8 @@ export default function Login() {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    mobileNumber: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -223,6 +224,20 @@ export default function Login() {
               </div>
             </div>
             
+            <div className="mb-3">
+              <label htmlFor="mobileNumber" className="sr-only">Mobile Number</label>
+              <input
+                id="mobileNumber"
+                name="mobileNumber"
+                type="tel"
+                value={formData.mobileNumber}
+                onChange={handleChange}
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
+                placeholder="Mobile Number (optional)"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter your mobile number to update your profile when using magic link</p>
+            </div>
+            
             <button
               type="button"
               onClick={async () => {
@@ -246,6 +261,7 @@ export default function Login() {
                   // Use NextAuth's signIn method with email provider
                   const result = await signIn('email', {
                     email: formData.email,
+                    mobileNumber: formData.mobileNumber,
                     callbackUrl,
                     redirect: false,
                   });

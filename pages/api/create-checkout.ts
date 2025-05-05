@@ -17,7 +17,8 @@ export default async function handler(
       fromBooking,
       totalHours,  // Extract totalHours from request body
       coachingFee, // Extract coaching fee from request body
-      bookingDetails // Extract booking details from request body
+      bookingDetails, // Extract booking details from request body
+      userInfo // Extract user information from request body
     } = req.body;
     
     // Debug logging
@@ -61,7 +62,17 @@ export default async function handler(
       checkout_options: {
         redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?ref=${referenceId}${fromBooking ? '&fromBooking=true' : ''}`,
         merchant_support_email: process.env.MERCHANT_SUPPORT_EMAIL || 'support@simstudio.com',
-        ask_for_shipping_address: false
+        ask_for_shipping_address: false,
+        // Add pre-populated buyer information if available
+        ...(userInfo?.email && { pre_populate_buyer_email: userInfo.email }),
+        ...(userInfo?.firstName && userInfo?.lastName && {
+          pre_populate_shipping_address: {
+            first_name: userInfo.firstName,
+            last_name: userInfo.lastName,
+            country: "AU", // Set country to Australia
+            ...(userInfo?.phoneNumber && { phone_number: userInfo.phoneNumber }) // Include phone number when available
+          }
+        })
       },
       order: {
         location_id: locationId,
@@ -92,6 +103,14 @@ export default async function handler(
     
     // Log the request for debugging
     console.log('Square Checkout Request:', JSON.stringify(checkoutRequest, null, 2));
+    
+    // Specifically log the user information being sent to Square
+    console.log('User information being sent to Square:', {
+      email: userInfo?.email,
+      firstName: userInfo?.firstName,
+      lastName: userInfo?.lastName,
+      country: 'AU'
+    });
     
     // Call Square API
     const checkoutResponse = await fetch(`${baseUrl}/v2/online-checkout/payment-links`, {

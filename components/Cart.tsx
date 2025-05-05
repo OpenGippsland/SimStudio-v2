@@ -12,6 +12,7 @@ interface Package {
 }
 
 interface BookingDetails {
+  packageId?: number;
   hours: number;
   userId: string;
   date: string;
@@ -79,8 +80,24 @@ export default function Cart({ bookingDetails }: CartProps) {
         const data = await response.json()
         setPackages(data)
         
-        // If hours are specified in booking details, find the closest package
-        if (bookingDetails.hours) {
+        // Check if a specific package ID was passed
+        const packageId = bookingDetails.packageId || (router.query.packageId ? parseInt(router.query.packageId as string, 10) : null)
+        
+        if (packageId) {
+          // Find the specific package by ID
+          const selectedPkg = data.find((pkg: Package) => pkg.id === packageId)
+          if (selectedPkg) {
+            setSelectedPackage(selectedPkg)
+            // If hours are also specified, set the quantity accordingly
+            if (bookingDetails.hours) {
+              setQuantity(Math.ceil(bookingDetails.hours / selectedPkg.hours))
+            }
+          } else {
+            console.error('Package not found with ID:', packageId)
+          }
+        } 
+        // If no package ID but hours are specified, find the closest package
+        else if (bookingDetails.hours) {
           // Find single hour package or default to first package
           const hourlyPackage = data.find((pkg: Package) => pkg.hours === 1) || data[0]
           setSelectedPackage(hourlyPackage)

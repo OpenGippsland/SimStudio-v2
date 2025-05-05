@@ -6,10 +6,11 @@ import Cart from '../components/Cart'
 
 export default function CartPage() {
   const router = useRouter()
-  const { hours, userId, date, time, coach, message, fromBooking, coachingFee, bookingId } = router.query
+  const { packageId, hours, userId, date, time, coach, message, fromBooking, coachingFee, bookingId } = router.query
   
   // Parse booking details from query parameters
   const bookingDetails = {
+    packageId: packageId ? parseInt(packageId as string, 10) : undefined,
     hours: hours ? parseInt(hours as string) : 1,
     userId: userId as string || '',
     date: date as string || '',

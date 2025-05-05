@@ -88,14 +88,14 @@ export default async function handler(
           }
         ],
         metadata: {
-          user_id: userId,
+          user_id: userId?.toString() || '', // Convert user_id to string
           is_authenticated: 'true',
           reference_id: referenceId,
           hours: hours.toString(),  // Include hours in metadata
           amount: amount.toString(), // Include amount in metadata
           has_coaching_fee: coachingFee ? 'true' : 'false', // Include coaching fee flag
           coaching_fee: coachingFee ? coachingFee.toString() : '0', // Include coaching fee amount
-          coach_id: bookingDetails?.coach || '', // Include coach ID if available
+          coach_id: 'none', // Default to 'none' for direct purchases
           booking_id: bookingDetails?.bookingId ? bookingDetails.bookingId.toString() : referenceId // Use booking ID if available, otherwise use reference ID
         }
       }
@@ -129,7 +129,10 @@ export default async function handler(
     console.log('Square Checkout Response:', JSON.stringify(checkoutData, null, 2));
     
     if (!checkoutResponse.ok) {
-      throw new Error(checkoutData?.errors?.[0]?.detail || 'Failed to create checkout');
+      // Make sure we have a string error message
+      const errorDetail = checkoutData?.errors?.[0]?.detail;
+      const errorMessage = typeof errorDetail === 'string' ? errorDetail : 'Failed to create checkout';
+      throw new Error(errorMessage);
     }
     
     // Return the checkout URL

@@ -63,6 +63,11 @@ const Navigation = () => {
             <Link href="/shop" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/shop') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
               Shop
             </Link>
+            {isAdmin && (
+              <Link href="/style-guide" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/style-guide') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
+                Style Guide
+              </Link>
+            )}
           </div>
           
           {/* Authentication buttons - desktop only */}
@@ -120,6 +125,11 @@ const Navigation = () => {
             <Link href="/shop" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/shop') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
               Shop
             </Link>
+            {isAdmin && (
+              <Link href="/style-guide" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/style-guide') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
+                Style Guide
+              </Link>
+            )}
             
             {/* Mobile authentication buttons */}
             {loading ? (

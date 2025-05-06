@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { useSession } from 'next-auth/react';
+import PageHeader from '../components/layout/PageHeader';
 
 export default function BookingPage() {
   const { user, authUser, loading } = useAuth();
@@ -50,14 +51,11 @@ export default function BookingPage() {
       </Head>
       
       {/* Page Header */}
-      <div className="carbon-bg text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4 heading-font">BOOK A SESSION</h1>
-          <p className="text-xl max-w-3xl mx-auto">
-            Reserve your simulator time and take the first step towards improving your driving skills.
-          </p>
-        </div>
-      </div>
+      <PageHeader 
+        title="BOOK A SESSION"
+        subtitle="Reserve your simulator time and take the first step towards improving your driving skills."
+        useCarbonBg={false}
+      />
 
       {/* Booking Section */}
       <section className="py-12 bg-white">

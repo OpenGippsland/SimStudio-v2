@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
+import PageHeader from '../components/layout/PageHeader';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -67,14 +68,11 @@ export default function ContactPage() {
   return (
     <>
       {/* Page Header */}
-      <div className="carbon-bg text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4 heading-font">CONTACT US</h1>
-          <p className="text-xl max-w-3xl mx-auto">
-            Have questions or want to learn more? Get in touch with our team.
-          </p>
-        </div>
-      </div>
+      <PageHeader 
+        title="CONTACT US"
+        subtitle="Have questions or want to learn more? Get in touch with our team."
+        useCarbonBg={false}
+      />
 
       {/* Contact Section */}
       <section className="py-12 bg-white">

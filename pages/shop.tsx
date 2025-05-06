@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import PageHeader from '../components/layout/PageHeader';
 
 interface Package {
   id: number;
@@ -108,14 +109,11 @@ export default function ShopPage() {
   return (
     <>
       {/* Page Header */}
-      <div className="carbon-bg text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4 heading-font">SHOP</h1>
-          <p className="text-xl max-w-3xl mx-auto">
-            Browse our packages and services to find the perfect option for your driving goals.
-          </p>
-        </div>
-      </div>
+      <PageHeader 
+        title="SHOP"
+        subtitle="Browse our packages and services to find the perfect option for your driving goals."
+        useCarbonBg={false}
+      />
 
       {/* Products */}
       <section className="py-12 bg-white">
@@ -150,7 +148,7 @@ export default function ShopPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {packages.map(pkg => (
-                  <div key={pkg.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div key={pkg.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-simstudio-yellow">
                     <div className="h-48 overflow-hidden">
                       <img 
                         src="/assets/SimStudioBanner.jpg" 
@@ -171,7 +169,7 @@ export default function ShopPage() {
                         <button 
                           onClick={() => handlePurchase(pkg)}
                           disabled={checkoutLoading === pkg.id}
-                          className={`block w-full bg-simstudio-yellow hover:bg-yellow-500 text-black text-center font-bold py-2 px-4 rounded-lg transition duration-300 ${
+                          className={`block w-full border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black text-center font-bold py-2 px-4 rounded-lg transition duration-300 ${
                             checkoutLoading === pkg.id ? 'opacity-75 cursor-not-allowed' : ''
                           }`}
                         >
@@ -180,7 +178,7 @@ export default function ShopPage() {
                       ) : (
                         <Link 
                           href={`/auth/login?redirect=${encodeURIComponent('/shop')}`}
-                          className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-2 px-4 rounded-lg transition duration-300"
+                          className="block w-full border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black text-center font-bold py-2 px-4 rounded-lg transition duration-300"
                         >
                           Login to Purchase
                         </Link>
@@ -201,7 +199,7 @@ export default function ShopPage() {
             <h2 className="text-3xl font-bold mb-8 text-center heading-font">FREQUENTLY ASKED QUESTIONS</h2>
             
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white p-6 rounded-lg shadow-md border border-simstudio-yellow">
                 <h3 className="text-xl font-bold mb-3">How do I redeem my purchased package?</h3>
                 <p className="text-gray-700">
                   After purchasing a package, you'll receive a confirmation email with a unique code. 
@@ -209,14 +207,14 @@ export default function ShopPage() {
                 </p>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white p-6 rounded-lg shadow-md border border-simstudio-yellow">
                 <h3 className="text-xl font-bold mb-3">Do packages expire?</h3>
                 <p className="text-gray-700">
                   Yes, packages are valid for 12 months from the date of purchase. Gift cards are valid for 36 months.
                 </p>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white p-6 rounded-lg shadow-md border border-simstudio-yellow">
                 <h3 className="text-xl font-bold mb-3">Can I share my package with someone else?</h3>
                 <p className="text-gray-700">
                   Packages are linked to individual accounts and cannot be shared. However, you can purchase a gift card 
@@ -224,7 +222,7 @@ export default function ShopPage() {
                 </p>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white p-6 rounded-lg shadow-md border border-simstudio-yellow">
                 <h3 className="text-xl font-bold mb-3">What's your refund policy?</h3>
                 <p className="text-gray-700">
                   We offer full refunds for packages within 14 days of purchase, provided no sessions have been booked. 
@@ -234,7 +232,7 @@ export default function ShopPage() {
             </div>
             
             <div className="text-center mt-8">
-              <Link href="/contact" className="inline-block bg-simstudio-yellow hover:bg-yellow-500 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
+              <Link href="/contact" className="inline-block border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
                 CONTACT US WITH QUESTIONS
               </Link>
             </div>

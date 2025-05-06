@@ -1,6 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import PageHeader from '../components/layout/PageHeader';
 
 export default function BlogPage() {
   // This is a placeholder for blog posts that will eventually come from Shopify
@@ -41,15 +42,15 @@ export default function BlogPage() {
 
   return (
     <>
+      <Head>
+        <title>Blog | SimStudio</title>
+      </Head>
       {/* Page Header */}
-      <div className="carbon-bg text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4 heading-font">BLOG</h1>
-          <p className="text-xl max-w-3xl mx-auto">
-            Tips, insights, and news from the world of driving simulation and training.
-          </p>
-        </div>
-      </div>
+      <PageHeader 
+        title="BLOG"
+        subtitle="Tips, insights, and news from the world of driving simulation and training."
+        useCarbonBg={false}
+      />
 
       {/* Blog Posts */}
       <section className="py-12 bg-white">

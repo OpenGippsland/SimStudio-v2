@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
 import Cart from '../components/Cart'
+import PageHeader from '../components/layout/PageHeader'
 
 export default function CartPage() {
   const router = useRouter()
@@ -22,19 +23,30 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <>
       <Head>
         <title>SimStudio - Cart</title>
       </Head>
       
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Simulator Hours - Checkout</h1>
-        <Link href="/" className="text-blue-600 hover:text-blue-800">
-          Back to Bookings
-        </Link>
-      </div>
+      <PageHeader 
+        title="Simulator Hours - Checkout"
+        subtitle="Review your booking details and complete your purchase"
+        useCarbonBg={false}
+      />
       
-      <Cart bookingDetails={bookingDetails} />
-    </div>
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-6 flex justify-end">
+              <Link href="/" className="text-blue-600 hover:text-blue-800">
+                Back to Bookings
+              </Link>
+            </div>
+            
+            <Cart bookingDetails={bookingDetails} />
+          </div>
+        </div>
+      </section>
+    </>
   )
 }

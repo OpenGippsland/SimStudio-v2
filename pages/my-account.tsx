@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import AuthGuard from '../components/auth/AuthGuard';
+import PageHeader from '../components/layout/PageHeader';
 
 const MyAccountPage = () => {
   const { user, authUser, refreshUser } = useAuth();

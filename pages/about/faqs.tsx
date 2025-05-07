@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import PageHeader from '../../components/layout/PageHeader';
+import AboutPageNavigation from '../../components/layout/AboutPageNavigation';
 
 // FAQ Item component with accordion functionality
 const FAQItem = ({ question, answer }: { question: string; answer: React.ReactNode }) => {
@@ -106,7 +107,7 @@ export default function FAQsPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <p className="text-lg mb-12">
-              Make sure you check out our FAQs to answer most commonly asked questions, and contact us if you'd like to know more.
+              Make sure you check out our FAQs to answer most commonly asked questions, and <Link href="/contact" className="text-simstudio-yellow underline">contact us</Link> if you'd like to know more.
             </p>
             
             {/* FAQ Accordion */}
@@ -123,7 +124,7 @@ export default function FAQsPage() {
                             <React.Fragment key={i}>
                               {part}
                               {i < arr.length - 1 && (
-                                <Link href="/contact" className="text-simstudio-yellow hover:underline">
+                                <Link href="/contact" className="text-simstudio-yellow underline">
                                   contact us
                                 </Link>
                               )}
@@ -136,7 +137,7 @@ export default function FAQsPage() {
                             <React.Fragment key={i}>
                               {part}
                               {i < arr.length - 1 && (
-                                <Link href="/about/facility" className="text-simstudio-yellow hover:underline">
+                                <Link href="/about/facility" className="text-simstudio-yellow underline">
                                   Facility
                                 </Link>
                               )}

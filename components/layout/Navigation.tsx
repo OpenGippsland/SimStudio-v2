@@ -62,16 +62,16 @@ const Navigation = () => {
               Home
             </Link>
             <Link href="/about" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActiveOrSubpath('/about') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
-              About Us
+              About
             </Link>
             <Link href="/booking" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/booking') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
               Booking
             </Link>
-            <Link href="/contact" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/contact') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
-              Contact
-            </Link>
             <Link href="/shop" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/shop') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
               Shop
+            </Link>
+            <Link href="/contact" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/contact') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
+              Contact
             </Link>
             {isAdmin && (
               <Link href="/style-guide" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/style-guide') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
@@ -124,28 +124,28 @@ const Navigation = () => {
               {/* Close button */}
               <button 
                 onClick={() => setMobileMenuOpen(false)}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 mb-4"
                 aria-label="Close menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-4 mt-12">
             <Link href="/" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
               Home
             </Link>
             <Link href="/about" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActiveOrSubpath('/about') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
-              About Us
+              About
             </Link>
             <Link href="/booking" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/booking') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
               Booking
             </Link>
-            <Link href="/contact" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/contact') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
-              Contact
-            </Link>
             <Link href="/shop" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/shop') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
               Shop
+            </Link>
+            <Link href="/contact" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/contact') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
+              Contact
             </Link>
             {isAdmin && (
               <Link href="/style-guide" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/style-guide') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
@@ -158,22 +158,22 @@ const Navigation = () => {
               <span className="text-base px-5 py-3 text-gray-800">Loading...</span>
             ) : user ? (
               <div className="flex flex-col items-center space-y-4 mt-4 w-full">
-                <Link href={shouldRedirectToAdmin ? "/admin" : "/my-account"} className="w-full bg-simstudio-yellow text-black text-base py-3 px-5 rounded-md hover:bg-yellow-400 text-center">
+                <Link href={shouldRedirectToAdmin ? "/admin" : "/my-account"} className="w-full text-black text-base py-3 px-5 border-2 border-simstudio-yellow rounded-lg hover:bg-yellow-50 transition-all text-center">
                   {shouldRedirectToAdmin ? "Admin" : "My Account"}
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="w-full bg-gray-800 text-white text-base py-3 px-5 rounded-md hover:bg-gray-700 text-center"
+                  className="w-full text-black text-base py-3 px-5 border-2 border-black rounded-lg hover:bg-gray-50 transition-all text-center"
                 >
                   Sign Out
                 </button>
               </div>
             ) : (
               <div className="flex flex-col items-center space-y-4 mt-4 w-full">
-                <Link href="/auth/login" className="w-full bg-simstudio-yellow text-black text-base py-3 px-5 rounded-md hover:bg-yellow-400 text-center">
+                <Link href="/auth/login" className="w-full text-black text-base py-3 px-5 border-2 border-simstudio-yellow rounded-lg hover:bg-yellow-50 transition-all text-center">
                   Sign In
                 </Link>
-                <Link href="/auth/register" className="w-full bg-gray-800 text-white text-base py-3 px-5 rounded-md hover:bg-gray-700 text-center">
+                <Link href="/auth/register" className="w-full text-black text-base py-3 px-5 border-2 border-black rounded-lg hover:bg-gray-50 transition-all text-center">
                   Register
                 </Link>
               </div>

@@ -16,8 +16,6 @@ export default function Home({ selectedUserId }: HomeProps) {
         title="Serious about driving? So are we."
         subtitle="Our driving simulator training facility offers structured coaching, guided programs, and regular seat time - designed to help build skills, confidence, and performance on the road or on the track."
         useCarbonBg={true}
-        bgImage="/assets/simhero.jpeg"
-        bgImageOpacity={50}
         buttons={
           <div className="flex flex-col md:flex-row justify-center gap-4">
             <Link href="/booking" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
@@ -35,45 +33,115 @@ export default function Home({ selectedUserId }: HomeProps) {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">How it works</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Step 1 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md border border-simstudio-yellow">
-              <div className="h-16 w-16 bg-simstudio-yellow rounded-full flex items-center justify-center mb-4 mx-auto">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
+          {/* Desktop Flow (hidden on mobile) */}
+          <div className="hidden md:block max-w-5xl mx-auto">
+              <div className="relative">
+                {/* Grey line connecting steps */}
+                <div className="absolute top-8 left-[8%] right-[8%] h-0.5 bg-gray-300 z-0"></div>
+                {/* Steps Container */}
+                <div className="relative flex justify-between">
+                {/* Step 1 */}
+                <div className="flex flex-col items-center w-1/4 px-4 group">
+                  <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
+                    1
+                  </div>
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                    <h3 className="text-lg font-bold text-center mb-2">Create an account</h3>
+                    <p className="text-gray-600 text-center text-sm">Sign up to get started</p>
+                  </div>
+                  
+                </div>
+                
+                {/* Step 2 */}
+                <div className="flex flex-col items-center w-1/4 px-4 group">
+                  <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
+                    2
+                  </div>
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                    <h3 className="text-lg font-bold text-center mb-2">Tell us about your booking</h3>
+                    <p className="text-gray-600 text-center text-sm">Select your preferences</p>
+                  </div>
+                  
+                </div>
+                
+                {/* Step 3 */}
+                <div className="flex flex-col items-center w-1/4 px-4 group">
+                  <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
+                    3
+                  </div>
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                    <h3 className="text-lg font-bold text-center mb-2">Choose available sessions</h3>
+                    <p className="text-gray-600 text-center text-sm">Pick your time slot</p>
+                  </div>
+                  
+                </div>
+                
+                {/* Step 4 */}
+                <div className="flex flex-col items-center w-1/4 px-4 group">
+                  <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
+                    4
+                  </div>
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                    <h3 className="text-lg font-bold text-center mb-2">Confirm and pay</h3>
+                    <p className="text-gray-600 text-center text-sm">Complete your booking</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-center mb-3">Create an account</h3>
             </div>
-            
-            {/* Step 2 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md border border-simstudio-yellow">
-              <div className="h-16 w-16 bg-simstudio-yellow rounded-full flex items-center justify-center mb-4 mx-auto">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
+          </div>
+          
+          {/* Mobile Flow (hidden on desktop) */}
+          <div className="md:hidden max-w-sm mx-auto">
+            <div className="relative pl-16">
+              {/* Step 1 */}
+              {/* Grey line connecting steps */}
+              <div className="absolute top-12 bottom-12 left-0 w-0.5 bg-gray-300 z-0"></div>
+              
+              <div className="relative mb-16 group">
+                <div className="absolute top-0 left-0 -translate-x-1/2 z-10 flex items-center justify-center w-12 h-12 bg-white rounded-full text-black font-bold text-lg shadow-md border-2 border-simstudio-yellow transition-all duration-300 group-hover:scale-110">
+                  1
+                </div>
+                
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                  <h3 className="text-lg font-bold mb-1">Create an account</h3>
+                  <p className="text-gray-600 text-sm">Sign up to get started</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-center mb-3">Tell us about your booking</h3>
-            </div>
-            
-            {/* Step 3 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md border border-simstudio-yellow">
-              <div className="h-16 w-16 bg-simstudio-yellow rounded-full flex items-center justify-center mb-4 mx-auto">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
+              
+              {/* Step 2 */}
+              <div className="relative mb-16 group">
+                <div className="absolute top-0 left-0 -translate-x-1/2 z-10 flex items-center justify-center w-12 h-12 bg-white rounded-full text-black font-bold text-lg shadow-md border-2 border-simstudio-yellow transition-all duration-300 group-hover:scale-110">
+                  2
+                </div>
+                
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                  <h3 className="text-lg font-bold mb-1">Tell us about your booking</h3>
+                  <p className="text-gray-600 text-sm">Select your preferences</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-center mb-3">Choose from available sessions</h3>
-            </div>
-            
-            {/* Step 4 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md border border-simstudio-yellow">
-              <div className="h-16 w-16 bg-simstudio-yellow rounded-full flex items-center justify-center mb-4 mx-auto">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+              
+              {/* Step 3 */}
+              <div className="relative mb-16 group">
+                <div className="absolute top-0 left-0 -translate-x-1/2 z-10 flex items-center justify-center w-12 h-12 bg-white rounded-full text-black font-bold text-lg shadow-md border-2 border-simstudio-yellow transition-all duration-300 group-hover:scale-110">
+                  3
+                </div>
+                
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                  <h3 className="text-lg font-bold mb-1">Choose available sessions</h3>
+                  <p className="text-gray-600 text-sm">Pick your time slot</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-center mb-3">Confirm and pay</h3>
+              
+              {/* Step 4 */}
+              <div className="relative group">
+                <div className="absolute top-0 left-0 -translate-x-1/2 z-10 flex items-center justify-center w-12 h-12 bg-white rounded-full text-black font-bold text-lg shadow-md border-2 border-simstudio-yellow transition-all duration-300 group-hover:scale-110">
+                  4
+                </div>
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                  <h3 className="text-lg font-bold mb-1">Confirm and pay</h3>
+                  <p className="text-gray-600 text-sm">Complete your booking</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -86,12 +154,12 @@ export default function Home({ selectedUserId }: HomeProps) {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* FAQ Card */}
-            <div className="bg-white rounded-lg p-6 shadow-md border border-simstudio-yellow">
+            <div className="bg-white rounded-lg p-6 shadow-md border border-simstudio-yellow flex flex-col h-full">
               <h3 className="text-xl font-bold text-center mb-4">Frequently Asked Questions</h3>
-              <p className="text-gray-700 text-center mb-6">
+              <p className="text-gray-700 text-center flex-grow">
                 Have questions about our services, facility, or how it all works? Check out our FAQs for answers.
               </p>
-              <div className="text-center">
+              <div className="text-center mt-auto pt-6">
                 <Link href="/about/faqs" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-2 px-6 rounded-lg transition duration-300">
                   READ FAQs
                 </Link>
@@ -99,12 +167,12 @@ export default function Home({ selectedUserId }: HomeProps) {
             </div>
             
             {/* About Card */}
-            <div className="bg-white rounded-lg p-6 shadow-md border border-simstudio-yellow">
+            <div className="bg-white rounded-lg p-6 shadow-md border border-simstudio-yellow flex flex-col h-full">
               <h3 className="text-xl font-bold text-center mb-4">About Sim Studio</h3>
-              <p className="text-gray-700 text-center mb-6">
+              <p className="text-gray-700 text-center flex-grow">
                 Learn more about our facility, our story, and our approach to driver training and education.
               </p>
-              <div className="text-center">
+              <div className="text-center mt-auto pt-6">
                 <Link href="/about" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-2 px-6 rounded-lg transition duration-300">
                   ABOUT US
                 </Link>
@@ -112,12 +180,12 @@ export default function Home({ selectedUserId }: HomeProps) {
             </div>
             
             {/* Contact Card */}
-            <div className="bg-white rounded-lg p-6 shadow-md border border-simstudio-yellow">
+            <div className="bg-white rounded-lg p-6 shadow-md border border-simstudio-yellow flex flex-col h-full">
               <h3 className="text-xl font-bold text-center mb-4">Contact Us</h3>
-              <p className="text-gray-700 text-center mb-6">
+              <p className="text-gray-700 text-center flex-grow">
                 Still not sure or have more questions? Get in touch with us directly.
               </p>
-              <div className="text-center">
+              <div className="text-center mt-auto pt-6">
                 <Link href="/contact" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-2 px-6 rounded-lg transition duration-300">
                   CONTACT US
                 </Link>
@@ -153,7 +221,7 @@ export default function Home({ selectedUserId }: HomeProps) {
                 Save by purchasing simulator time in packs of hours that you can use anytime.
               </p>
               <div className="text-center">
-                <Link href="/shop" className="border border-gray-800 hover:bg-gray-800 hover:text-white text-black font-bold py-2 px-6 rounded-lg transition duration-300">
+                <Link href="/shop" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-2 px-6 rounded-lg transition duration-300">
                   SHOP NOW
                 </Link>
               </div>

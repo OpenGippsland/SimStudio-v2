@@ -827,7 +827,7 @@ const StyleGuide = () => {
                   <span className="text-2xl mr-3">💡</span>
                   <div>
                     <p className="text-black font-semibold">Save more: purchase hour packs for volume discounts.</p>
-                    <a href="/packages" className="mt-1 inline-block text-black hover:underline font-medium">Browse Packs <span aria-hidden="true">→</span></a>
+                    <a href="/shop" className="mt-1 inline-block text-black hover:underline font-medium">Browse Packs <span aria-hidden="true">→</span></a>
                   </div>
                 </div>
               </div>

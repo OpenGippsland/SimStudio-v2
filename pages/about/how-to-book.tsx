@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import PageHeader from '../../components/layout/PageHeader';
+import AboutPageNavigation from '../../components/layout/AboutPageNavigation';
 
 export default function HowToBookPage() {
   return (
@@ -17,9 +18,7 @@ export default function HowToBookPage() {
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <p className="text-lg mb-12">
-              We've built an intuitive system to make it easy for you to book time in the simulator and add coaching when you need it. Here's an overview of the steps.
-            </p>
+           
             
             {/* Booking Steps */}
             <div className="space-y-16 mb-16">
@@ -27,7 +26,9 @@ export default function HowToBookPage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="md:w-1/4 flex justify-center">
                   <div className="h-20 w-20 bg-simstudio-yellow rounded-full flex items-center justify-center">
-                    <span className="text-3xl font-bold text-black">1</span>
+                    <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
                   </div>
                 </div>
                 <div className="md:w-3/4">
@@ -42,7 +43,9 @@ export default function HowToBookPage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="md:w-1/4 flex justify-center">
                   <div className="h-20 w-20 bg-simstudio-yellow rounded-full flex items-center justify-center">
-                    <span className="text-3xl font-bold text-black">2</span>
+                    <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
                   </div>
                 </div>
                 <div className="md:w-3/4">
@@ -57,7 +60,9 @@ export default function HowToBookPage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="md:w-1/4 flex justify-center">
                   <div className="h-20 w-20 bg-simstudio-yellow rounded-full flex items-center justify-center">
-                    <span className="text-3xl font-bold text-black">3</span>
+                    <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
                   </div>
                 </div>
                 <div className="md:w-3/4">
@@ -72,7 +77,9 @@ export default function HowToBookPage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="md:w-1/4 flex justify-center">
                   <div className="h-20 w-20 bg-simstudio-yellow rounded-full flex items-center justify-center">
-                    <span className="text-3xl font-bold text-black">4</span>
+                    <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
                   </div>
                 </div>
                 <div className="md:w-3/4">
@@ -84,14 +91,17 @@ export default function HowToBookPage() {
               </div>
             </div>
             
+            {/* About Page Navigation */}
+            <AboutPageNavigation />
+            
             {/* CTA */}
-            <div className="text-center mt-12 bg-gray-50 p-8 rounded-lg border border-simstudio-yellow">
+            <div className="text-center mt-12 bg-gray-50 p-8 rounded-lg">
               <h2 className="text-2xl font-bold mb-6">Ready to book your session?</h2>
               <div className="flex flex-col md:flex-row justify-center gap-4">
-                <Link href="/booking" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
+                <Link href="/booking" className="border border-gray-800 hover:bg-gray-800 hover:text-white text-black font-bold py-3 px-8 rounded-lg transition duration-300">
                   BOOK NOW
                 </Link>
-                <Link href="/about" className="border border-gray-800 hover:bg-gray-800 hover:text-white text-black font-bold py-3 px-8 rounded-lg transition duration-300">
+                <Link href="/about" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
                   BACK TO ABOUT
                 </Link>
               </div>

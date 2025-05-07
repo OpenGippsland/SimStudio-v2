@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import PageHeader from '../../components/layout/PageHeader';
+import AboutPageNavigation from '../../components/layout/AboutPageNavigation';
 
 export default function FacilityPage() {
   return (
@@ -17,9 +18,7 @@ export default function FacilityPage() {
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <p className="text-lg mb-12">
-              The studio has been built with training and education in mind. Here's what to expect -
-            </p>
+           
             
             {/* Facility Features */}
             <div className="space-y-16 mb-16">
@@ -101,19 +100,13 @@ export default function FacilityPage() {
                         <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span className="text-lg">Comfortable seating for theory sessions</span>
+                        <span className="text-lg">Comfortable seating for theory and technical sessions</span>
                       </li>
                       <li className="flex items-start">
                         <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span className="text-lg">Display screens for reviewing driving data</span>
-                      </li>
-                      <li className="flex items-start">
-                        <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span className="text-lg">Whiteboards for explaining concepts</span>
+                        <span className="text-lg">Large whiteboard and screen to review driving sessions and deliver learning content</span>
                       </li>
                     </ul>
                   </div>
@@ -152,6 +145,9 @@ export default function FacilityPage() {
                 </div>
               </div>
             </div>
+            
+            {/* About Page Navigation */}
+            <AboutPageNavigation />
             
             {/* CTA */}
             <div className="text-center mt-12 bg-gray-50 p-8 rounded-lg">

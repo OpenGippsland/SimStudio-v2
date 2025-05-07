@@ -90,7 +90,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
             <p className="text-black font-semibold">
               Save more: purchase hour packs for volume discounts.
             </p>
-            <a href="/packages" className="mt-1 inline-block text-black hover:underline font-medium">
+            <a href="/shop" className="mt-1 inline-block text-black hover:underline font-medium">
               Browse Packs <span aria-hidden="true">&rarr;</span>
             </a>
           </div>

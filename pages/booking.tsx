@@ -89,7 +89,7 @@ export default function BookingPage() {
                         <Link href="/my-account" className="px-3 py-1 text-sm border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
                           My Bookings
                         </Link>
-                        <Link href="/packages" className="px-3 py-1 text-sm border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
+                        <Link href="/shop" className="px-3 py-1 text-sm border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
                           Add Credits
                         </Link>
                       </div>

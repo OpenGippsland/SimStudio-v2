@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import PageHeader from '../../components/layout/PageHeader';
+import AboutPageNavigation from '../../components/layout/AboutPageNavigation';
 
 export default function OurStoryPage() {
   return (
@@ -21,55 +22,74 @@ export default function OurStoryPage() {
               <p className="text-lg mb-6">
                 Sim Studio is a specialised training facility based around pro-level driving simulators, offering both motorsport coaching and road-based driver education.
               </p>
+            </div>
+            
+            {/* There is a gap */}
+            <div className="bg-gray-50 p-8 rounded-lg mb-12">
+              <h2 className="text-2xl font-bold mb-6">There is a gap</h2>
               <p className="text-lg mb-6">
-                The studio was founded by a team of passionate driving enthusiasts and professional instructors who recognized the need for accessible, high-quality driver training in a safe environment.
+                On the road, parents, driving schools, and individuals need a safe, structured environment for learners and advanced road safety education, with limited options available outside of real-world driving.
               </p>
               <p className="text-lg mb-6">
-                Our South Melbourne studio, opening in May 2025, will feature state-of-the-art driving simulators that provide realistic feedback and immersive experiences for drivers of all skill levels.
+                In Motorsport, simulators have become an essential tool for race drivers - but there are no dedicated simulator-based coaching studios in Australia offering structured, high-level coaching - until now.
               </p>
             </div>
             
-            {/* Our Mission */}
+            {/* Road or Race? */}
             <div className="bg-gray-50 p-8 rounded-lg mb-12">
-              <h2 className="text-2xl font-bold mb-6">Our Mission</h2>
+              <h2 className="text-2xl font-bold mb-6">Road or Race?</h2>
               <p className="text-lg mb-6">
-                At SimStudio, our mission is to improve driving skills, confidence, and safety through accessible, high-quality simulation training. We believe that better drivers make safer roads for everyone.
+                Why not both?!
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Safety First</h3>
+                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Road focus</h3>
                   <p className="text-lg">
-                    We prioritize safety in everything we do, providing a risk-free environment to practice and develop critical driving skills before applying them on the road.
+                    Designed for learner drivers, advanced road safety training, and individuals looking to build confidence in a controlled, risk-free setting.
                   </p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Accessibility</h3>
+                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Race focus</h3>
                   <p className="text-lg">
-                    We make driver training accessible to everyone, regardless of experience level, with programs designed to meet you where you are.
-                  </p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Excellence</h3>
-                  <p className="text-lg">
-                    We strive for excellence in our training methods, technology, and customer service to provide the best possible experience.
-                  </p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Community</h3>
-                  <p className="text-lg">
-                    We foster a supportive community of drivers who share knowledge, experiences, and a passion for improvement.
+                    Focused on motorsport coaching for drivers looking to enhance their skills, train for competitions, and maximise their performance in a structured environment.
                   </p>
                 </div>
               </div>
+              
+              <p className="text-lg mt-8">
+                By utilizing professional-grade simulators, Sim Studio provide a cost-effective, accessible, and highly efficient alternative to traditional driver training.
+              </p>
             </div>
             
-            {/* Why Simulators? */}
+            {/* Where We Are Now */}
             <div className="bg-gray-50 p-8 rounded-lg mb-12">
-              <h2 className="text-2xl font-bold mb-6">Why Simulators?</h2>
+              <h2 className="text-2xl font-bold mb-6">Where We Are Now</h2>
               <p className="text-lg mb-6">
-                Driving simulators offer unique advantages for driver training that complement real-world experience:
+                Simulators are fast becoming recognised as essential for driver development - traditional driving schools focus on passing the driving test, but few offer risk-free simulator-based training to build real-world skills before getting behind the wheel.
               </p>
+              <p className="text-lg mb-6">
+                At Sim Studio, we believe there is a unique opportunity to create a specialized driver training business that meets the demands of both race drivers and everyday road users.
+              </p>
+            </div>
+            
+            {/* Where We Want to Be */}
+            <div className="bg-gray-50 p-8 rounded-lg mb-12">
+              <h2 className="text-2xl font-bold mb-6">Where We Want to Be</h2>
+              <p className="text-lg mb-6">
+                Our goal is to establish Sim Studio as the go-to destination for structured, simulator-based driver training.
+              </p>
+              <p className="text-lg mb-6">
+                In the short term, this means opening the facility in South Melbourne (May 2025), develop initial training programs and partnerships, with a focus on driver education.
+              </p>
+              <p className="text-lg mb-6">
+                As we move forward, Sim Studio hopes to build relationships and partnerships with schools, corporate and the motorsport community, and to expand out to multiple locations (including interstate).
+              </p>
+            </div>
+            
+            {/* The Sim Studio difference */}
+            <div className="bg-gray-50 p-8 rounded-lg mb-12">
+              <h2 className="text-2xl font-bold mb-6">The Sim Studio difference</h2>
               
               <ul className="space-y-4 mb-6">
                 <li className="flex items-start">
@@ -77,8 +97,7 @@ export default function OurStoryPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div>
-                    <span className="text-lg font-bold">Safety</span>
-                    <p className="text-lg">Practice high-risk scenarios without real-world consequences, allowing you to learn from mistakes safely.</p>
+                    <p className="text-lg">Structured, professional coaching: Unlike home-based simulator setups, our programs are designed and delivered by experienced driver coaches</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -86,8 +105,7 @@ export default function OurStoryPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div>
-                    <span className="text-lg font-bold">Repeatability</span>
-                    <p className="text-lg">Practice the same scenario multiple times to build muscle memory and confidence.</p>
+                    <p className="text-lg">Bridging motorsport and road safety: We cater to both aspiring race drivers and every day road users, making us the most versatile simulator training facility in the country</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -95,8 +113,7 @@ export default function OurStoryPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div>
-                    <span className="text-lg font-bold">Data & Feedback</span>
-                    <p className="text-lg">Receive immediate, objective feedback on your driving with detailed telemetry and performance metrics.</p>
+                    <p className="text-lg">Cost-effective alternative to track-based training: Motorsport coaching is expensive due to track hire, vehicle maintenance, and travel costs—our facility provides an affordable way to train with real-time feedback</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -104,8 +121,7 @@ export default function OurStoryPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div>
-                    <span className="text-lg font-bold">Variety</span>
-                    <p className="text-lg">Experience different vehicles, road conditions, and environments that might be impractical or impossible to access in real life.</p>
+                    <p className="text-lg">Safe, risk-free learning environment: For learner drivers and those advancing their road skills, simulator training offers a controlled space to practice without real-world dangers like traffic or weather conditions</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -113,35 +129,105 @@ export default function OurStoryPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <div>
-                    <span className="text-lg font-bold">Cost-Effective</span>
-                    <p className="text-lg">Get more practice time for less cost compared to real-world track days or specialized driving courses.</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <div>
-                    <span className="text-lg font-bold">Environmentally Friendly</span>
-                    <p className="text-lg">Reduce carbon emissions while still getting valuable driving experience.</p>
+                    <p className="text-lg">Open access for professionals and businesses: Our facility is available for race teams, coaches, and driving schools to integrate simulator training into their own programs</p>
                   </div>
                 </li>
               </ul>
             </div>
             
-            {/* Our Team */}
+            {/* Benefits of Simulator-Based Training */}
             <div className="bg-gray-50 p-8 rounded-lg mb-12">
-              <h2 className="text-2xl font-bold mb-6">Our Team</h2>
-              <p className="text-lg mb-6">
-                Our team consists of experienced driving instructors, motorsport coaches, and simulation experts who are passionate about helping drivers of all levels improve their skills.
-              </p>
-              <p className="text-lg mb-6">
-                Each member of our team brings unique expertise and experience to provide comprehensive training that addresses all aspects of driving, from basic vehicle control to advanced racing techniques.
-              </p>
-              <p className="text-lg">
-                Whether you're a new driver looking to build confidence, an experienced driver wanting to refine your skills, or a motorsport enthusiast chasing that perfect lap time, our team is dedicated to helping you achieve your goals.
+              <h2 className="text-2xl font-bold mb-6">Benefits of Simulator-Based Training</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Motorsport Clients</h3>
+                  <p className="text-lg">
+                    More seat time at a lower cost, enhanced feedback loops, and the ability to train for any track, any conditions, any time.
+                  </p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Road Training Clients</h3>
+                  <p className="text-lg">
+                    Learn and refine skills in a controlled, pressure-free setting, with an emphasis on building confidence before taking to the road.
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-lg mt-8">
+                It's more than just a simulator experience—it's a professional training facility designed to develop safer, more skilled drivers at all levels.
               </p>
             </div>
+            
+            {/* Team & Expertise */}
+            <div className="bg-gray-50 p-8 rounded-lg mb-12">
+              <h2 className="text-2xl font-bold mb-6">Team & Expertise</h2>
+              
+              <h3 className="text-xl font-bold mb-4">Founder's Background & Motorsport Experience</h3>
+              <p className="text-lg mb-6">
+                Sim Studio is founded by someone with a lifelong connection to motorsport, combining hands-on racing experience with a practical, structured approach to coaching.
+              </p>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Motorsport has been a big part of life from an early age, influenced by a father who was passionate about Formula 1 in the 70s, 80s, and 90s</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Started racing go-karts in the late 80s, competing throughout his teenage years, experiencing the role karting plays in driver development</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Moved into car racing, later working with race teams, gaining first-hand industry experience</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Has attended racing events and tracks around the world, including Motegi, Suzuka and Sepang recently</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Brings an engineering-focused approach to motorsport, with a strong understanding of data logging, performance tuning, and race strategy</span>
+                </li>
+              </ul>
+              
+              <h3 className="text-xl font-bold mb-4">Coaching & Training Approach</h3>
+              <p className="text-lg mb-6">
+                Sim Studio take a structured, practical approach to driver training, combining motorsport experience with effective coaching methods.
+              </p>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Worked as a performance driver coach, including coaching roles with motorsport teams and Mercedes-Benz AMG</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Unlike many ex-racers who become coaches, brings experience in training and consulting, having spent years running workshops and structured learning programs in corporate settings</span>
+                </li>
+                <li className="flex items-start">
+                  <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span className="text-lg">Focuses on education at every level - making driving techniques clear and easy to apply, helping drivers improve faster</span>
+                </li>
+              </ul>
+            </div>
+            
+            {/* About Page Navigation */}
+            <AboutPageNavigation />
             
             {/* CTA */}
             <div className="text-center mt-12 bg-gray-50 p-8 rounded-lg">

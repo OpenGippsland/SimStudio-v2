@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import PageHeader from '../../components/layout/PageHeader';
+import AboutPageNavigation from '../../components/layout/AboutPageNavigation';
 
 export default function DriverTrainingPage() {
   return (
@@ -18,11 +19,9 @@ export default function DriverTrainingPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="mb-12">
+            
               <p className="text-lg mb-6">
-                Sim Studio is the first dedicated simulator-based driver training facility of its type in Australia, filling a gap in both motorsport coaching and road driver education. Unlike traditional training models, we provide structured, professional coaching using state-of-the-art simulators.
-              </p>
-              <p className="text-lg mb-6">
-                Initially we are working with a 'meet you where you're at' model, meaning whatever level of driving you are up to, from 'have never driven before' through to 'taking your motorsport career seriously', we have the experience and expertise to help you move forward. We welcome you to <Link href="/contact" className="text-simstudio-yellow hover:underline">contact us</Link> so we can chat about your situation.
+                Initially we are working with a 'meet you where you're at' model, meaning whatever level of driving you are up to, from 'have never driven before' through to 'taking your motorsport career seriously', we have the experience and expertise to help you move forward. We welcome you to <Link href="/contact" className="text-simstudio-yellow underline">contact us</Link> so we can chat about your situation.
               </p>
               <p className="text-lg mb-6">
                 As demand grows, we are building more structured and focussed education content for both on-road and race track training - these will be rolled out as soon as we have them ready. Here's a snapshot of the kinds of things we are working on -
@@ -160,7 +159,7 @@ export default function DriverTrainingPage() {
                   <svg className="w-5 h-5 text-simstudio-yellow mt-1 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  <span className="text-lg">Programs being piloted in terms 2 and 3, <Link href="/contact" className="text-simstudio-yellow hover:underline">contact us</Link> if your school is interested</span>
+                  <span className="text-lg">Programs being piloted in terms 2 and 3, <Link href="/contact" className="text-simstudio-yellow underline">contact us</Link> if your school is interested</span>
                 </li>
               </ul>
               
@@ -203,6 +202,9 @@ export default function DriverTrainingPage() {
               </ul>
             </div>
             
+            {/* About Page Navigation */}
+            <AboutPageNavigation />
+            
             {/* CTA */}
             <div className="text-center mt-12 bg-gray-50 p-8 rounded-lg">
               <h2 className="text-2xl font-bold mb-6">Ready to improve your driving skills?</h2>
@@ -210,10 +212,7 @@ export default function DriverTrainingPage() {
                 <Link href="/booking" className="border border-gray-800 hover:bg-gray-800 hover:text-white text-black font-bold py-3 px-8 rounded-lg transition duration-300">
                   BOOK A SESSION
                 </Link>
-                <Link href="/contact" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
-                  CONTACT US
-                </Link>
-                <Link href="/about" className="border border-gray-800 hover:bg-gray-800 hover:text-white text-black font-bold py-3 px-8 rounded-lg transition duration-300">
+                <Link href="/about" className="border border-simstudio-yellow hover:bg-simstudio-yellow/10 text-black font-bold py-3 px-8 rounded-lg transition duration-300">
                   BACK TO ABOUT
                 </Link>
               </div>

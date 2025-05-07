@@ -822,7 +822,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   };
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="bg-white p-8 rounded-lg shadow-md mb-8 border border-gray-100">
+    <form onSubmit={(e) => e.preventDefault()} className="bg-white p-4 md:p-8 rounded-lg shadow-md mb-8 border border-gray-100">
       {loading ? (
         <div className="flex justify-center items-center py-12">
           <div className="text-center">

@@ -68,7 +68,7 @@ export default function BookingPage() {
             ) : (
               <>
                 {/* User Info or Login Notice */}
-                <div className="bg-white rounded-lg shadow-lg p-4 mb-6 flex items-center justify-between">
+                <div className="bg-white rounded-lg shadow-lg p-4 mb-6 flex flex-col md:flex-row items-center md:justify-between">
                   {isAuthenticated ? (
                     <>
                       <div className="flex items-center">
@@ -85,7 +85,7 @@ export default function BookingPage() {
                         </div>
                       </div>
                       
-                      <div className="flex space-x-3">
+                      <div className="flex space-x-3 mt-4 md:mt-0">
                         <Link href="/my-account" className="px-3 py-1 text-sm border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
                           My Bookings
                         </Link>
@@ -102,7 +102,7 @@ export default function BookingPage() {
                           Sign in to complete your booking
                         </p>
                       </div>
-                      <div className="flex space-x-3">
+                      <div className="flex space-x-3 mt-4 md:mt-0">
                         <Link href="/auth/login?redirect=/booking" className="px-3 py-1 text-sm border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
                           Sign In
                         </Link>

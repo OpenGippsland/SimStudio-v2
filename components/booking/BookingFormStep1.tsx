@@ -83,7 +83,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 1/3: Choose your session type and length</h2>
       
-      <div className="mb-6 p-4 bg-yellow-50 rounded-lg border-2 border-simstudio-yellow">
+      <div className="mb-6 p-4 rounded-lg border-2 border-simstudio-yellow">
         <div className="flex items-start">
           <span className="text-2xl mr-3">💡</span>
           <div>

@@ -362,35 +362,50 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
       )}
       
       {success && (
-        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
-          <h3 className="text-xl font-bold mb-2">Success! See you soon</h3>
-          <p className="mb-4">Your booking has been confirmed and you will receive a confirmation email shortly.</p>
+        <div className="mb-8 rounded-lg shadow-md overflow-hidden">
+          {/* Success header with checkmark icon */}
+          <div className="p-6 flex items-center">
+            <div className="mr-5 rounded-full p-2 border-2 border-simstudio-yellow">
+              <svg className="w-8 h-8 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800">Booking Confirmed!</h3>
+              <p className="text-gray-600">We're looking forward to seeing you soon</p>
+            </div>
+          </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <a
-              href="/booking"
-              className="py-3 px-4 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors text-center"
-            >
-              Make another booking
-            </a>
-            <a
-              href="/my-account"
-              className="py-3 px-4 bg-gray-800 text-white font-bold rounded-lg hover:bg-gray-700 transition-colors text-center"
-            >
-              See my bookings
-            </a>
-            <a
-              href="/about"
-              className="py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-center"
-            >
-              More information
-            </a>
-            <a
-              href="/"
-              className="py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-center"
-            >
-              Return to home
-            </a>
+          {/* Success content */}
+          <div className="p-6 bg-white">
+            <p className="text-gray-700 mb-6">
+              Your booking has been confirmed and you will receive a confirmation email shortly with all the details.
+            </p>
+            
+            {/* Action buttons in a more modern layout */}
+            <div className="space-y-3">
+              <a
+                href="/booking"
+                className="flex items-center justify-between w-full py-3 px-5 border-2 border-simstudio-yellow text-black font-medium rounded-lg hover:bg-yellow-50 transition-all group"
+              >
+                <span>Make another booking</span>
+                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform text-simstudio-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+              
+              <a
+                href="/my-account"
+                className="flex items-center justify-between w-full py-3 px-5 border-2 border-gray-800 text-gray-800 font-medium rounded-lg hover:bg-gray-50 transition-all group"
+              >
+                <span>View my bookings</span>
+                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+              
+              {/* Removed "More information" and "Return to home" buttons as requested */}
+            </div>
           </div>
         </div>
       )}

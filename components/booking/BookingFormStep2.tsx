@@ -41,14 +41,14 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 2/3: Find available sessions</h2>
       
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+      <div className="mb-6 p-3 bg-gray-50 rounded-lg">
         <p className="text-gray-700">
           Select a date and time that works for you. Available sessions are shown below.
         </p>
       </div>
       
       {/* Top Refine button */}
-      <div className="flex justify-between items-center mb-6 bg-gray-50 p-4 rounded-lg">
+      <div className="flex justify-between items-center mb-6 bg-gray-50 p-3 rounded-lg">
         <p className="text-gray-700">
           <span className="font-medium">Your selection:</span> {formData.hours} hour{formData.hours !== 1 ? 's' : ''} simulator session
           {formData.wantsCoach ? 
@@ -66,7 +66,7 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
       </div>
       
       {sortedDates.length > 0 ? (
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* All dates in chronological order */}
           {sortedDates.map(([date, sessions]) => {
             // Check if this date has any available sessions

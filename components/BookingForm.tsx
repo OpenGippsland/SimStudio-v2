@@ -772,18 +772,14 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
             <React.Fragment key={step.number}>
               {/* Step circle */}
               <div className={`flex flex-col items-center ${
-                currentStep >= step.number || step.isCompleted 
+                currentStep >= step.number || step.isCompleted
                   ? 'text-simstudio-yellow' 
-                  : step.isNextStep 
-                    ? 'text-blue-500' 
-                    : 'text-gray-400'
+                  : 'text-gray-400'
               }`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${
                   currentStep >= step.number || step.isCompleted
                     ? 'bg-simstudio-yellow text-black' 
-                    : step.isNextStep
-                      ? 'bg-blue-100 text-blue-500 border border-blue-500'
-                      : 'bg-gray-200 text-gray-500'
+                    : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step.isCompleted ? '✓' : step.number}
                 </div>
@@ -801,9 +797,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
                   <div className={`h-1 w-full ${
                     currentStep > step.number || step.isCompleted
                       ? 'bg-simstudio-yellow' 
-                      : step.isNextStep
-                        ? 'bg-blue-200'
-                        : 'bg-gray-200'
+                      : 'bg-gray-200'
                   }`}></div>
                 </div>
               )}
@@ -866,13 +860,15 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
           
           {/* Only show login/register buttons if user is not logged in and booking is not successful */}
           {!isLoggedIn && !success && (
-            <div className="mt-6 flex justify-center space-x-4">
-              <a href="/auth/login?redirect=/booking" className="px-4 py-2 bg-simstudio-yellow text-black rounded hover:bg-yellow-400 transition">
-                Sign In
-              </a>
-              <a href="/auth/register?redirect=/booking" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition">
-                Create Account
-              </a>
+            <div className="flex justify-center mt-6 mb-6">
+              <div className="flex space-x-3">
+                <a href="/auth/login?redirect=/booking" className="px-3 py-1 text-sm border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
+                  Sign In
+                </a>
+                <a href="/auth/register?redirect=/booking" className="px-3 py-1 text-sm border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
+                  Create Account
+                </a>
+              </div>
             </div>
           )}
         </>

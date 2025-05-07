@@ -301,32 +301,32 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               {/* Payment Required Notice */}
               {((selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours) || 
                 (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee)) && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="mt-2 p-4 bg-yellow-50 rounded-lg border-2 border-simstudio-yellow">
                   <div className="flex items-start">
-                    <svg className="w-5 h-5 mr-2 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 mr-2 text-simstudio-yellow mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
                       <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <h4 className="text-blue-800 font-medium">Payment Required</h4>
+                      <h4 className="text-black font-semibold">Payment Required</h4>
                       
                       {selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours && (
-                        <p className="text-sm text-blue-700 mt-1">
+                        <p className="text-sm text-black mt-1">
                           You need {sessionDetails.hours - selectedUserCredits} more credit hours for this booking.
                         </p>
                       )}
                       
                       {formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee && (
-                        <p className="text-sm text-blue-700 mt-1">
+                        <p className="text-sm text-black mt-1">
                           Coaching fee: ${coachingFee.toFixed(2)} for {formData.coachHours} hour{formData.coachHours !== 1 ? 's' : ''} with {formData.coach}.
                         </p>
                       )}
                       
-                      <p className="text-sm text-blue-700 mt-1">
+                      <p className="text-sm text-black mt-1">
                         When you click "PROCEED TO CHECKOUT", you'll be taken to Square's secure payment page.
                       </p>
                       
-                      <p className="text-sm text-blue-700 mt-1">
+                      <p className="text-sm text-black mt-1">
                         Your booking will be automatically confirmed once payment is complete.
                       </p>
                     </div>

@@ -83,13 +83,18 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 1/3: Choose your session type and length</h2>
       
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <p className="text-blue-800">
-          <span className="font-medium">💡 Pro tip:</span> Save money by purchasing packs of hours before booking. 
-          <a href="/packages" className="text-blue-600 hover:underline ml-1 font-medium">
-            View hour packs
-          </a>
-        </p>
+      <div className="mb-6 p-4 bg-yellow-50 rounded-lg border-2 border-simstudio-yellow">
+        <div className="flex items-start">
+          <span className="text-2xl mr-3">💡</span>
+          <div>
+            <p className="text-black font-semibold">
+              Save more: purchase hour packs for volume discounts.
+            </p>
+            <a href="/packages" className="mt-1 inline-block text-black hover:underline font-medium">
+              Browse Packs <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+        </div>
       </div>
       <div className="mb-6">
         <label className="block text-gray-700 font-medium mb-3">Simulator Duration:</label>

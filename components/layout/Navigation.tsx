@@ -8,9 +8,7 @@ const Navigation = () => {
   const { user, loading, signOut } = useAuth();
   
   // State for dropdown menus and mobile menu
-  const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileAboutDropdownOpen, setMobileAboutDropdownOpen] = useState(false);
   
   // Helper functions to determine if a link is active
   const isActive = (path: string) => router.pathname === path;
@@ -63,48 +61,9 @@ const Navigation = () => {
             <Link href="/" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
               Home
             </Link>
-            <div className="relative">
-              <div 
-                className={`px-2 lg:px-3 py-2 rounded-md transition-colors flex items-center cursor-pointer ${isActiveOrSubpath('/about') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}
-                onMouseEnter={() => setAboutDropdownOpen(true)}
-                onMouseLeave={() => setAboutDropdownOpen(false)}
-              >
-                About Us
-                <svg className={`w-4 h-4 ml-1 transform transition-transform ${aboutDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-              
-              {/* About dropdown menu */}
-              {aboutDropdownOpen && (
-                <div 
-                  className="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-lg z-50"
-                  onMouseEnter={() => setAboutDropdownOpen(true)}
-                  onMouseLeave={() => setAboutDropdownOpen(false)}
-                >
-                  <div className="py-1">
-                    <Link href="/about" className={`block px-4 py-2 text-sm ${isActive('/about') ? 'bg-gray-100 text-simstudio-yellow font-medium' : 'text-gray-800 hover:bg-gray-100'}`}>
-                      About Overview
-                    </Link>
-                    <Link href="/about/our-story" className={`block px-4 py-2 text-sm ${isActive('/about/our-story') ? 'bg-gray-100 text-simstudio-yellow font-medium' : 'text-gray-800 hover:bg-gray-100'}`}>
-                      Our Story
-                    </Link>
-                    <Link href="/about/facility" className={`block px-4 py-2 text-sm ${isActive('/about/facility') ? 'bg-gray-100 text-simstudio-yellow font-medium' : 'text-gray-800 hover:bg-gray-100'}`}>
-                      Our Facility
-                    </Link>
-                    <Link href="/about/driver-training" className={`block px-4 py-2 text-sm ${isActive('/about/driver-training') ? 'bg-gray-100 text-simstudio-yellow font-medium' : 'text-gray-800 hover:bg-gray-100'}`}>
-                      Driver Training
-                    </Link>
-                    <Link href="/about/how-to-book" className={`block px-4 py-2 text-sm ${isActive('/about/how-to-book') ? 'bg-gray-100 text-simstudio-yellow font-medium' : 'text-gray-800 hover:bg-gray-100'}`}>
-                      How to Book
-                    </Link>
-                    <Link href="/about/faqs" className={`block px-4 py-2 text-sm ${isActive('/about/faqs') ? 'bg-gray-100 text-simstudio-yellow font-medium' : 'text-gray-800 hover:bg-gray-100'}`}>
-                      FAQs
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+            <Link href="/about" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActiveOrSubpath('/about') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
+              About Us
+            </Link>
             <Link href="/booking" className={`px-2 lg:px-3 py-2 rounded-md transition-colors ${isActive('/booking') ? 'bg-simstudio-yellow text-black font-medium' : 'hover:text-simstudio-yellow'}`}>
               Booking
             </Link>
@@ -176,36 +135,9 @@ const Navigation = () => {
             <Link href="/" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
               Home
             </Link>
-            <div className="w-full">
-              <button 
-                onClick={() => setMobileAboutDropdownOpen(!mobileAboutDropdownOpen)}
-                className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base flex justify-between items-center ${isActiveOrSubpath('/about') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}
-              >
-                <span>About Us</span>
-                <svg className={`w-4 h-4 transform transition-transform ${mobileAboutDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-              {mobileAboutDropdownOpen && (
-                <div className="pl-4 mt-2 space-y-1 border-l-2 border-gray-200 ml-6">
-                <Link href="/about/our-story" className={`w-full px-4 py-2 rounded-md transition-colors text-sm block ${isActive('/about/our-story') ? 'text-simstudio-yellow font-medium' : 'text-gray-600 hover:text-simstudio-yellow'}`}>
-                  Our Story
-                </Link>
-                <Link href="/about/facility" className={`w-full px-4 py-2 rounded-md transition-colors text-sm block ${isActive('/about/facility') ? 'text-simstudio-yellow font-medium' : 'text-gray-600 hover:text-simstudio-yellow'}`}>
-                  Our Facility
-                </Link>
-                <Link href="/about/driver-training" className={`w-full px-4 py-2 rounded-md transition-colors text-sm block ${isActive('/about/driver-training') ? 'text-simstudio-yellow font-medium' : 'text-gray-600 hover:text-simstudio-yellow'}`}>
-                  Driver Training
-                </Link>
-                <Link href="/about/how-to-book" className={`w-full px-4 py-2 rounded-md transition-colors text-sm block ${isActive('/about/how-to-book') ? 'text-simstudio-yellow font-medium' : 'text-gray-600 hover:text-simstudio-yellow'}`}>
-                  How to Book
-                </Link>
-                <Link href="/about/faqs" className={`w-full px-4 py-2 rounded-md transition-colors text-sm block ${isActive('/about/faqs') ? 'text-simstudio-yellow font-medium' : 'text-gray-600 hover:text-simstudio-yellow'}`}>
-                  FAQs
-                </Link>
-              </div>
-              )}
-            </div>
+            <Link href="/about" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActiveOrSubpath('/about') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
+              About Us
+            </Link>
             <Link href="/booking" className={`w-full px-5 py-3 rounded-md transition-colors text-center text-base ${isActive('/booking') ? 'bg-simstudio-yellow text-black font-medium' : 'text-gray-800 hover:text-simstudio-yellow'}`}>
               Booking
             </Link>

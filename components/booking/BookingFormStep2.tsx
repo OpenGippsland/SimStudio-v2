@@ -39,7 +39,13 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 heading-font">Available Sessions</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 2/3: Find available sessions</h2>
+      
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <p className="text-gray-700">
+          Select a date and time that works for you. Available sessions are shown below.
+        </p>
+      </div>
       
       {/* Top Refine button */}
       <div className="flex justify-between items-center mb-6 bg-gray-50 p-4 rounded-lg">

@@ -74,10 +74,10 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
   // Get user information from auth context
   const { user, authUser, refreshUser } = useAuth();
   
-  // Refresh auth state when component mounts
+  // Refresh auth state when component mounts (only once)
   useEffect(() => {
     refreshUser();
-  }, [refreshUser]);
+  }, []); // Empty dependency array ensures this runs only once on mount
   
   // Function to handle direct checkout with Square
   const handleProceedToCheckout = async () => {
@@ -201,7 +201,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
   
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 heading-font">Booking Confirmation</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 3/3: Review session details and confirm</h2>
       
       {sessionDetails && (
         <div className="mb-8 p-6 bg-white rounded-lg shadow-md border border-gray-100">
@@ -251,20 +251,20 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               </span>
             </div>
             
-          {/* Coach Fee if applicable */}
-          {formData.wantsCoach && coachRate && (
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-700">
-                Coaching ({formData.coachHours} {formData.coachHours === 1 ? 'hour' : 'hours'} @ ${coachRate}/hr)
-              </span>
-              <span className="text-gray-700">
-                {formData.paidCoachingFee ? 
-                  <span className="text-green-600 font-medium">${coachingFee?.toFixed(2)} (Paid)</span> : 
-                  `$${coachingFee?.toFixed(2)}`
-                }
-              </span>
-            </div>
-          )}
+            {/* Coach Fee if applicable */}
+            {formData.wantsCoach && coachRate && (
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-700">
+                  Coaching ({formData.coachHours} {formData.coachHours === 1 ? 'hour' : 'hours'} @ ${coachRate}/hr)
+                </span>
+                <span className="text-gray-700">
+                  {formData.paidCoachingFee ? 
+                    <span className="text-green-600 font-medium">${coachingFee?.toFixed(2)} (Paid)</span> : 
+                    `$${coachingFee?.toFixed(2)}`
+                  }
+                </span>
+              </div>
+            )}
             
             {/* Divider */}
             <div className="border-t border-gray-200 my-2"></div>
@@ -290,30 +290,67 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               )}
             </div>
             
-            {/* Credits Warning */}
-            {selectedUserCredits !== null && (
-              <div className="mt-3">
+            {/* Credits and Payment Information */}
+            <div className="mt-3">
+              {selectedUserCredits !== null && (
                 <p className="text-gray-800">
                   Available Credits: {selectedUserCredits} hours
                 </p>
-                {selectedUserCredits < sessionDetails.hours && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-blue-800 font-medium">
-                      You need {sessionDetails.hours - selectedUserCredits} more credit hours for this booking.
-                    </p>
-                    <p className="text-sm text-blue-700 mt-1">
-                      When you click "PROCEED TO CHECKOUT", you'll be taken to Square's secure payment page to purchase the additional credits
-                      {formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee 
-                        ? ' and pay the coaching fee' 
-                        : ''}.
-                    </p>
-                    <p className="text-sm text-blue-700 mt-1">
-                      Your booking will be automatically confirmed once payment is complete.
-                    </p>
+              )}
+              
+              {/* Payment Required Notice */}
+              {((selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours) || 
+                (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee)) && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 mr-2 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                      <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h4 className="text-blue-800 font-medium">Payment Required</h4>
+                      
+                      {selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours && (
+                        <p className="text-sm text-blue-700 mt-1">
+                          You need {sessionDetails.hours - selectedUserCredits} more credit hours for this booking.
+                        </p>
+                      )}
+                      
+                      {formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee && (
+                        <p className="text-sm text-blue-700 mt-1">
+                          Coaching fee: ${coachingFee.toFixed(2)} for {formData.coachHours} hour{formData.coachHours !== 1 ? 's' : ''} with {formData.coach}.
+                        </p>
+                      )}
+                      
+                      <p className="text-sm text-blue-700 mt-1">
+                        When you click "PROCEED TO CHECKOUT", you'll be taken to Square's secure payment page.
+                      </p>
+                      
+                      <p className="text-sm text-blue-700 mt-1">
+                        Your booking will be automatically confirmed once payment is complete.
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+              
+              {/* Payment Completed Notice */}
+              {formData.paidCoachingFee && (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 mr-2 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h4 className="text-green-800 font-medium">Payment Completed</h4>
+                      <p className="text-sm text-green-700 mt-1">
+                        Your payment has been processed successfully. Click "CONFIRM BOOKING" to finalize your reservation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -326,23 +363,41 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
       
       {success && (
         <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
-          <p className="font-bold">Booking created successfully!</p>
-          <p className="mt-2">You will receive a confirmation email shortly.</p>
+          <h3 className="text-xl font-bold mb-2">Success! See you soon</h3>
+          <p className="mb-4">Your booking has been confirmed and you will receive a confirmation email shortly.</p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <a
+              href="/booking"
+              className="py-3 px-4 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors text-center"
+            >
+              Make another booking
+            </a>
+            <a
+              href="/my-account"
+              className="py-3 px-4 bg-gray-800 text-white font-bold rounded-lg hover:bg-gray-700 transition-colors text-center"
+            >
+              See my bookings
+            </a>
+            <a
+              href="/about"
+              className="py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-center"
+            >
+              More information
+            </a>
+            <a
+              href="/"
+              className="py-3 px-4 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-center"
+            >
+              Return to home
+            </a>
+          </div>
         </div>
       )}
       
-      <div className="flex justify-between mt-8">
-        {success ? (
-          <a
-            href="/booking"
-            target="_self"
-            rel="noopener noreferrer"
-            className="py-3 px-6 bg-simstudio-yellow text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors inline-block text-center"
-            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
-          >
-            CREATE ANOTHER BOOKING
-          </a>
-        ) : (
+      {/* Buttons section */}
+      {!success && (
+        <div className="flex justify-between mt-8">
           <button
             type="button"
             onClick={() => setStep(2)}
@@ -350,13 +405,10 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
           >
             Back
           </button>
-        )}
-        
-        {!success && (
+          
           <button
             type="button"
             onClick={
-              // If user doesn't have enough credits or needs to pay coaching fee, redirect to checkout
               (selectedUserCredits !== null && selectedUserCredits < (sessionDetails?.hours || 0)) || 
               (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee)
                 ? handleProceedToCheckout
@@ -376,8 +428,8 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
                 : 'CONFIRM BOOKING'
             }
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

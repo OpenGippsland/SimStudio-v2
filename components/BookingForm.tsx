@@ -248,7 +248,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
     fetchCoachData();
   }, []);
 
-  // Update selected user credits when user changes
+  // Update selected user credits when user changes - only fetch once
   useEffect(() => {
     if (selectedUserId) {
       setSelectedUserCredits(null);
@@ -269,7 +269,7 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
     } else {
       setSelectedUserCredits(null);
     }
-  }, [selectedUserId]);
+  }, [selectedUserId]); // Only re-run when selectedUserId changes
 
   // Function to check if a date is closed
   const isDateClosed = useMemo(() => {
@@ -696,6 +696,137 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
   // Check if user is logged in
   const isLoggedIn = !!formData.userId;
 
+  // Determine if payment is needed
+  const needsPayment = useMemo(() => {
+    return (
+      (selectedUserCredits !== null && selectedUserCredits < formData.hours) || 
+      (formData.wantsCoach && formData.coach && formData.coach !== 'none' && !formData.paidCoachingFee)
+    );
+  }, [selectedUserCredits, formData.hours, formData.wantsCoach, formData.coach, formData.paidCoachingFee]);
+
+  // Check if we're after payment
+  const isAfterPayment = useMemo(() => {
+    return router.query.fromCheckout === 'true' || formData.paidCoachingFee === true;
+  }, [router.query.fromCheckout, formData.paidCoachingFee]);
+
+  // Determine which flow and state we're in
+  const flowState = useMemo(() => {
+    if (!needsPayment) {
+      return 'simple'; // Simple 3-step flow
+    } else if (needsPayment && !isAfterPayment) {
+      return 'beforePayment'; // Before Square payment
+    } else {
+      return 'afterPayment'; // After returning from Square
+    }
+  }, [needsPayment, isAfterPayment]);
+
+  // Step configurations
+  const simpleFlowSteps = [
+    { number: 1, label: "Choose" },
+    { number: 2, label: "Find" },
+    { number: 3, label: "Confirm" }
+  ];
+
+  // Extended flow before payment (3+1 steps)
+  const extendedFlowBeforePaymentSteps = [
+    { number: 1, label: "Choose" },
+    { number: 2, label: "Find" },
+    { number: 3, label: "Review" },
+    { number: 4, label: "Payment", isNextStep: true }
+  ];
+
+  // Extended flow after payment (4 steps, all completed)
+  const extendedFlowAfterPaymentSteps = [
+    { number: 1, label: "Choose" },
+    { number: 2, label: "Find" },
+    { number: 3, label: "Review" },
+    { number: 4, label: "Payment & Confirm", isCompleted: true }
+  ];
+
+  // Enhanced Step indicator component
+  const StepIndicator = ({ 
+    currentStep, 
+    flowState
+  }: { 
+    currentStep: number;
+    flowState: 'simple' | 'beforePayment' | 'afterPayment';
+  }) => {
+    // Select the appropriate steps based on flow state
+    let steps;
+    switch (flowState) {
+      case 'simple':
+        steps = simpleFlowSteps;
+        break;
+      case 'beforePayment':
+        steps = extendedFlowBeforePaymentSteps;
+        break;
+      case 'afterPayment':
+        steps = extendedFlowAfterPaymentSteps;
+        break;
+    }
+    
+    return (
+      <div className="mb-8">
+        <div className="flex justify-between">
+          {steps.map((step, index) => (
+            <React.Fragment key={step.number}>
+              {/* Step circle */}
+              <div className={`flex flex-col items-center ${
+                currentStep >= step.number || step.isCompleted 
+                  ? 'text-simstudio-yellow' 
+                  : step.isNextStep 
+                    ? 'text-blue-500' 
+                    : 'text-gray-400'
+              }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${
+                  currentStep >= step.number || step.isCompleted
+                    ? 'bg-simstudio-yellow text-black' 
+                    : step.isNextStep
+                      ? 'bg-blue-100 text-blue-500 border border-blue-500'
+                      : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {step.isCompleted ? '✓' : step.number}
+                </div>
+                <span className="text-xs font-medium">
+                  {step.label}
+                  {step.isNextStep && (
+                    <span className="ml-1">→</span>
+                  )}
+                </span>
+              </div>
+              
+              {/* Connector line (except after last step) */}
+              {index < steps.length - 1 && (
+                <div className="flex-1 flex items-center mx-2">
+                  <div className={`h-1 w-full ${
+                    currentStep > step.number || step.isCompleted
+                      ? 'bg-simstudio-yellow' 
+                      : step.isNextStep
+                        ? 'bg-blue-200'
+                        : 'bg-gray-200'
+                  }`}></div>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        
+        {/* Payment notice removed as requested */}
+        
+        {flowState === 'afterPayment' && (
+          <div className="mt-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
+            <p className="flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Payment completed successfully! Your booking is now confirmed.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <form onSubmit={(e) => e.preventDefault()} className="bg-white p-8 rounded-lg shadow-md mb-8 border border-gray-100">
       {loading ? (
@@ -724,6 +855,9 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
               </div>
             </div>
           )}
+          
+          {/* Step indicator */}
+          {!success && <StepIndicator currentStep={step} flowState={flowState} />}
           
           {/* Only apply opacity if user is not logged in and booking is not successful */}
           <div className={!isLoggedIn && !success ? "opacity-70 pointer-events-none" : ""}>

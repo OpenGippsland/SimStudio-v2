@@ -45,9 +45,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
                     1
                   </div>
-                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-auto min-h-[10rem] flex flex-col">
                     <h3 className="text-lg font-bold text-center mb-2">Create an account</h3>
-                    <p className="text-gray-600 text-center text-sm">Sign up to get started</p>
+                    <p className="text-gray-600 text-center text-sm mb-6">Sign up to get started</p>
                   </div>
                   
                 </div>
@@ -57,9 +57,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
                     2
                   </div>
-                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-auto min-h-[10rem] flex flex-col">
                     <h3 className="text-lg font-bold text-center mb-2">Tell us about your booking</h3>
-                    <p className="text-gray-600 text-center text-sm">Select your preferences</p>
+                    <p className="text-gray-600 text-center text-sm mb-6">Select your preferences</p>
                   </div>
                   
                 </div>
@@ -69,9 +69,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
                     3
                   </div>
-                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-auto min-h-[10rem] flex flex-col">
                     <h3 className="text-lg font-bold text-center mb-2">Choose available sessions</h3>
-                    <p className="text-gray-600 text-center text-sm">Pick your time slot</p>
+                    <p className="text-gray-600 text-center text-sm mb-6">Pick your time slot</p>
                   </div>
                   
                 </div>
@@ -81,9 +81,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6 text-black font-bold text-xl shadow-md transition-all duration-300 group-hover:scale-110 border-2 border-simstudio-yellow">
                     4
                   </div>
-                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-32 flex flex-col">
+                  <div className="bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-2 w-full h-auto min-h-[10rem] flex flex-col">
                     <h3 className="text-lg font-bold text-center mb-2">Confirm and pay</h3>
-                    <p className="text-gray-600 text-center text-sm">Complete your booking</p>
+                    <p className="text-gray-600 text-center text-sm mb-6">Complete your booking</p>
                   </div>
                 </div>
               </div>
@@ -102,9 +102,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   1
                 </div>
                 
-                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-auto min-h-[8rem] flex flex-col">
                   <h3 className="text-lg font-bold mb-1">Create an account</h3>
-                  <p className="text-gray-600 text-sm">Sign up to get started</p>
+                  <p className="text-gray-600 text-sm mb-4">Sign up to get started</p>
                 </div>
               </div>
               
@@ -114,9 +114,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   2
                 </div>
                 
-                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-auto min-h-[8rem] flex flex-col">
                   <h3 className="text-lg font-bold mb-1">Tell us about your booking</h3>
-                  <p className="text-gray-600 text-sm">Select your preferences</p>
+                  <p className="text-gray-600 text-sm mb-4">Select your preferences</p>
                 </div>
               </div>
               
@@ -126,9 +126,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                   3
                 </div>
                 
-                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-auto min-h-[8rem] flex flex-col">
                   <h3 className="text-lg font-bold mb-1">Choose available sessions</h3>
-                  <p className="text-gray-600 text-sm">Pick your time slot</p>
+                  <p className="text-gray-600 text-sm mb-4">Pick your time slot</p>
                 </div>
               </div>
               
@@ -137,9 +137,9 @@ export default function Home({ selectedUserId }: HomeProps) {
                 <div className="absolute top-0 left-0 -translate-x-1/2 z-10 flex items-center justify-center w-12 h-12 bg-white rounded-full text-black font-bold text-lg shadow-md border-2 border-simstudio-yellow transition-all duration-300 group-hover:scale-110">
                   4
                 </div>
-                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-24 flex flex-col">
+                <div className="ml-10 bg-white p-5 rounded-lg shadow-md border border-gray-100 transition-all duration-300 group-hover:-translate-y-1 h-auto min-h-[8rem] flex flex-col">
                   <h3 className="text-lg font-bold mb-1">Confirm and pay</h3>
-                  <p className="text-gray-600 text-sm">Complete your booking</p>
+                  <p className="text-gray-600 text-sm mb-4">Complete your booking</p>
                 </div>
               </div>
             </div>

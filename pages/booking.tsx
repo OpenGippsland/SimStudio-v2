@@ -67,53 +67,6 @@ export default function BookingPage() {
               </div>
             ) : (
               <>
-                {/* User Info or Login Notice */}
-                <div className="bg-white rounded-lg shadow-lg p-4 mb-6 flex flex-col md:flex-row items-center md:justify-between">
-                  {isAuthenticated ? (
-                    <>
-                      <div className="flex items-center">
-                        <div>
-                          <h2 className="text-lg font-semibold text-gray-800">Welcome, {user?.name || user?.email}</h2>
-                          {creditsLoading ? (
-                            <p className="text-sm text-gray-500">Loading credits...</p>
-                          ) : credits ? (
-                            <p className="text-sm">
-                              <span className="text-gray-600">Available Hours:</span> 
-                              <span className="font-bold text-simstudio-yellow ml-1">{credits.simulator_hours}</span>
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-3 mt-4 md:mt-0">
-                        <Link href="/my-account" className="px-3 py-1 text-sm border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
-                          My Bookings
-                        </Link>
-                        <Link href="/shop" className="px-3 py-1 text-sm border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
-                          Add Credits
-                        </Link>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-between w-full">
-                      <div>
-                        <h2 className="text-lg font-semibold text-gray-800">Login Required</h2>
-                        <p className="text-sm text-gray-600">
-                          Sign in to complete your booking
-                        </p>
-                      </div>
-                      <div className="flex space-x-3 mt-4 md:mt-0">
-                        <Link href="/auth/login?redirect=/booking" className="px-3 py-1 text-sm border border-simstudio-yellow text-black rounded hover:border-yellow-400 transition">
-                          Sign In
-                        </Link>
-                        <Link href="/auth/register?redirect=/booking" className="px-3 py-1 text-sm border border-gray-800 text-gray-800 rounded hover:border-gray-700 transition">
-                          Create Account
-                        </Link>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* Booking Form */}
                 <div className="mb-8">
                   <BookingForm 

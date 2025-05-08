@@ -39,7 +39,7 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 2/3: Find available sessions</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Find available sessions</h2>
       
       <div className="mb-6 p-3 bg-gray-50 rounded-lg">
         <p className="text-gray-700">
@@ -80,8 +80,17 @@ const BookingFormStep2: React.FC<BookingFormStep2Props> = ({
                 onSelectSession={(session) => {
                   if (session.isAvailable) {
                     handleSessionSelection(session);
+                    
                     // Go straight to confirmation page when a session is selected
                     setStep(3);
+                    
+                    // Scroll to the top of the booking form to ensure the user sees the confirmation section
+                    setTimeout(() => {
+                      const bookingForm = document.querySelector('form.bg-white');
+                      if (bookingForm) {
+                        bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100); // Small delay to ensure the DOM has updated
                   }
                 }}
                 selectedSession={selectedSession || undefined}

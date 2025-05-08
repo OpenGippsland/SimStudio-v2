@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 export default function CheckoutSuccess() {
   const router = useRouter();
-  const { ref } = router.query;
+  const { ref, directBooking, bookingId } = router.query;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -16,6 +16,7 @@ export default function CheckoutSuccess() {
   const [timeoutOccurred, setTimeoutOccurred] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'attempted' | 'completed' | 'failed'>('pending');
   const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const isDirectBooking = directBooking === 'true';
   
   // Use a ref to track if verification has been attempted
   const hasAttemptedVerification = React.useRef(false);
@@ -294,8 +295,104 @@ export default function CheckoutSuccess() {
     }
   }, [isPageRefresh]); // Only depend on isPageRefresh to prevent infinite loops
   
-  // Verify payment when we have the reference ID
+  // Handle direct bookings (no payment needed)
   useEffect(() => {
+    if (isDirectBooking && bookingId) {
+      console.log(`[${pageInstanceId.current}] Direct booking detected, fetching booking details for ID:`, bookingId);
+      
+      // For direct bookings, we'll show success immediately and try to fetch details in the background
+      setVerificationStatus('completed');
+      setMessage('Your booking has been confirmed successfully!');
+      
+      const timeoutId = setTimeout(() => {
+        const fetchDirectBooking = async () => {
+          try {
+            // Convert bookingId to string to ensure it's a single value, then to number
+            const bookingIdStr = Array.isArray(bookingId) ? bookingId[0] : bookingId;
+            const bookingIdNum = parseInt(bookingIdStr, 10);
+            
+            console.log(`[${pageInstanceId.current}] Converted booking ID:`, bookingIdNum);
+            console.log(`[${pageInstanceId.current}] Attempting to fetch booking with ID ${bookingIdNum} from Supabase`);
+            
+            // First try with the exact ID
+            let { data: bookingData, error: bookingError } = await supabase
+              .from('bookings')
+              .select(`
+                id, 
+                start_time, 
+                end_time, 
+                simulator_id, 
+                coach, 
+                coach_hours,
+                payment_status,
+                users (
+                  name,
+                  email
+                )
+              `)
+              .eq('id', bookingIdNum)
+              .single();
+              
+            if (bookingError) {
+              console.error(`[${pageInstanceId.current}] Error fetching direct booking with exact ID:`, bookingError);
+              
+              // If that fails, try to get the most recent booking
+              console.log(`[${pageInstanceId.current}] Trying to fetch most recent booking instead`);
+              
+              const { data: recentBookings, error: recentError } = await supabase
+                .from('bookings')
+                .select(`
+                  id, 
+                  start_time, 
+                  end_time, 
+                  simulator_id, 
+                  coach, 
+                  coach_hours,
+                  payment_status,
+                  users (
+                    name,
+                    email
+                  )
+                `)
+                .order('created_at', { ascending: false })
+                .limit(1);
+                
+              if (!recentError && recentBookings && recentBookings.length > 0) {
+                bookingData = recentBookings[0];
+                console.log(`[${pageInstanceId.current}] Found most recent booking:`, bookingData);
+                setBookingDetails(bookingData);
+              } else {
+                // Don't set an error since we already showed success
+                console.error(`[${pageInstanceId.current}] Error fetching recent booking:`, recentError);
+              }
+            } else if (bookingData) {
+              console.log(`[${pageInstanceId.current}] Found direct booking:`, bookingData);
+              setBookingDetails(bookingData);
+            }
+          } catch (err) {
+            console.error(`[${pageInstanceId.current}] Error fetching direct booking details:`, err);
+            // Don't set an error since we already showed success
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+        fetchDirectBooking();
+      }, 2000); // 2 seconds timeout
+      
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [isDirectBooking, bookingId]);
+
+  // Verify payment when we have the reference ID (only for payment-based bookings)
+  useEffect(() => {
+    // Skip verification for direct bookings
+    if (isDirectBooking) {
+      return;
+    }
+    
     if (!ref || typeof ref !== 'string') {
       console.log(`[${pageInstanceId.current}] No reference ID available yet`);
       return;
@@ -322,25 +419,32 @@ export default function CheckoutSuccess() {
     // Proceed with verification
     verifyPayment(ref);
     
-  }, [ref, verifyPayment, isPageRefresh, verificationStatus]);
+  }, [ref, verifyPayment, isPageRefresh, verificationStatus, isDirectBooking]);
   
   return (
     <div className="container mx-auto py-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold mb-4">Payment Confirmation</h1>
         
-        {loading ? (
+        {loading && verificationStatus === 'pending' ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
             <p>Verifying your payment...</p>
           </div>
-        ) : error ? (
+        ) : error && verificationStatus === 'failed' ? (
           <div className="bg-red-100 text-red-700 p-4 rounded mb-4">
             <p className="font-bold">Error</p>
             <p>{error}</p>
-            <p className="mt-4">
-              Please contact support with your reference ID: {ref}
-            </p>
+            {!isDirectBooking && ref && (
+              <p className="mt-4">
+                Please contact support with your reference ID: {ref}
+              </p>
+            )}
+            {isDirectBooking && bookingId && (
+              <p className="mt-4">
+                Please contact support with your booking ID: {bookingId}
+              </p>
+            )}
           </div>
         ) : (
           <div className="rounded-lg shadow-md overflow-hidden mb-4 border-2 border-simstudio-yellow">
@@ -350,19 +454,31 @@ export default function CheckoutSuccess() {
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <div>
-                <h3 className="text-2xl font-bold text-gray-800">Payment Confirmed!</h3>
-                <p className="text-gray-600">Thank you for your purchase</p>
+                <h3 className="text-2xl font-bold text-gray-800">
+                  {isDirectBooking ? 'Booking Confirmed!' : 'Payment Confirmed!'}
+                </h3>
+                <p className="text-gray-600">
+                  {isDirectBooking ? 'Your session is booked' : 'Thank you for your purchase'}
+                </p>
               </div>
             </div>
             
             {/* Success content */}
             <div className="p-6 bg-white">
-              <p className="text-gray-700 mb-4">
-                Your payment has been received and your booking has been confirmed. Your credits have been applied to your booking.
-              </p>
-              <p className="text-gray-700 mb-6">
-                Your reference ID is: <span className="font-medium">{ref}</span>
-              </p>
+              {isDirectBooking ? (
+                <p className="text-gray-700 mb-4">
+                  Your booking has been confirmed successfully. Your simulator session is now reserved.
+                </p>
+              ) : (
+                <>
+                  <p className="text-gray-700 mb-4">
+                    Your payment has been received and your booking has been confirmed. Your credits have been applied to your booking.
+                  </p>
+                  <p className="text-gray-700 mb-6">
+                    Your reference ID is: <span className="font-medium">{ref}</span>
+                  </p>
+                </>
+              )}
               
               {/* Display booking details if available */}
               {bookingDetails && (
@@ -402,6 +518,15 @@ export default function CheckoutSuccess() {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {!bookingDetails && isDirectBooking && (
+                <div className="mt-4 mb-4 pt-4 border-t border-gray-200">
+                  <h3 className="font-bold text-lg mb-3">Booking Information</h3>
+                  <p className="text-gray-700">
+                    Your booking (ID: {bookingId}) has been confirmed. You can view all details in your account.
+                  </p>
                 </div>
               )}
               

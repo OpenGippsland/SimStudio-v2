@@ -85,6 +85,8 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
     
     try {
       setLocalIsSubmitting(true);
+      // Also set the parent component's isSubmitting state to ensure button stays in processing state
+      isSubmitting = true;
       
       // Calculate how many credits are needed (if any)
       const creditsNeeded = selectedUserCredits !== null ? 
@@ -199,20 +201,24 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
     }
   };
   
+  // Ensure the button stays in processing state during form submission
+  const handleFormSubmit = (e: React.FormEvent) => {
+    setLocalIsSubmitting(true);
+    handleSubmit(e);
+  };
+  
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Step 3/3: Review session details and confirm</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Review and confirm</h2>
       
       {sessionDetails && (
-        <div className="mb-8 p-6 bg-white rounded-lg shadow-md border border-gray-100">
-          <h3 className="text-lg font-bold mb-4 text-simstudio-yellow">Session Details</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="mb-6 bg-white rounded-lg shadow-md">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-b border-gray-100">
             <div>
               <p className="text-gray-700 mb-2">
                 <span className="font-medium">Date:</span> {sessionDetails.date}
               </p>
-              <p className="text-gray-700 mb-2">
+              <p className="text-gray-700">
                 <span className="font-medium">Time:</span> {sessionDetails.time}
               </p>
             </div>
@@ -240,9 +246,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
           </div>
           
           {/* Booking Summary Section */}
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4">
-            <h4 className="font-bold text-gray-800 mb-3">Booking Summary</h4>
-            
+          <div className="p-4">
             {/* Simulator Hours */}
             <div className="flex justify-between mb-2">
               <span className="text-gray-700">Simulator ({sessionDetails.hours} {sessionDetails.hours === 1 ? 'hour' : 'hours'})</span>
@@ -280,15 +284,6 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               </span>
             </div>
             
-            {/* Breakdown explanation */}
-            <div className="mt-2 text-xs text-gray-500">
-              <p>Simulator time: {sessionDetails.hours} {sessionDetails.hours === 1 ? 'hour' : 'hours'} 
-                {selectedUserCredits !== null ? ' (using credits)' : ` ($${(sessionDetails.hours * 50).toFixed(2)})`}
-              </p>
-              {coachingFee && coachingFee > 0 && (
-                <p>Coaching fee: ${coachingFee.toFixed(2)} (paid separately)</p>
-              )}
-            </div>
             
             {/* Credits and Payment Information */}
             <div className="mt-3">
@@ -301,7 +296,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               {/* Payment Required Notice */}
               {((selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours) || 
                 (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee)) && (
-                <div className="mt-2 p-4 bg-yellow-50 rounded-lg border-2 border-simstudio-yellow">
+                <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-simstudio-yellow">
                   <div className="flex items-start">
                     <svg className="w-5 h-5 mr-2 text-simstudio-yellow mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
@@ -311,23 +306,19 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
                       <h4 className="text-black font-semibold">Payment Required</h4>
                       
                       {selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours && (
-                        <p className="text-sm text-black mt-1">
-                          You need {sessionDetails.hours - selectedUserCredits} more credit hours for this booking.
+                        <p className="text-sm text-black">
+                          You need {sessionDetails.hours - selectedUserCredits} more credit hours
                         </p>
                       )}
                       
                       {formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee && (
-                        <p className="text-sm text-black mt-1">
-                          Coaching fee: ${coachingFee.toFixed(2)} for {formData.coachHours} hour{formData.coachHours !== 1 ? 's' : ''} with {formData.coach}.
+                        <p className="text-sm text-black">
+                          Coaching fee: ${coachingFee.toFixed(2)}
                         </p>
                       )}
                       
-                      <p className="text-sm text-black mt-1">
-                        When you click "PROCEED TO CHECKOUT", you'll be taken to Square's secure payment page.
-                      </p>
-                      
-                      <p className="text-sm text-black mt-1">
-                        Your booking will be automatically confirmed once payment is complete.
+                      <p className="text-sm text-black">
+                        Booking confirmed after payment
                       </p>
                     </div>
                   </div>
@@ -362,31 +353,24 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
       )}
       
       {success && (
-        <div className="mb-8 rounded-lg shadow-md overflow-hidden">
-          {/* Success header with checkmark icon */}
-          <div className="p-6 flex items-center">
-            <div className="mr-5 rounded-full p-2 border-2 border-simstudio-yellow">
-              <svg className="w-8 h-8 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20">
+        <div className="mb-6 rounded-lg shadow-md overflow-hidden">
+          <div className="p-4 flex items-center bg-white">
+            <div className="mr-4 rounded-full p-2 border-2 border-simstudio-yellow">
+              <svg className="w-6 h-6 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">Booking Confirmed!</h3>
-              <p className="text-gray-600">We're looking forward to seeing you soon</p>
+              <h3 className="text-xl font-bold text-gray-800">Booking Confirmed!</h3>
+              <p className="text-sm text-gray-600">Confirmation email sent</p>
             </div>
           </div>
           
-          {/* Success content */}
-          <div className="p-6 bg-white">
-            <p className="text-gray-700 mb-6">
-              Your booking has been confirmed and you will receive a confirmation email shortly with all the details.
-            </p>
-            
-            {/* Action buttons in a more modern layout */}
+          <div className="p-4 bg-white">
             <div className="space-y-3">
               <a
                 href="/booking"
-                className="flex items-center justify-between w-full py-3 px-5 border-2 border-simstudio-yellow text-black font-medium rounded-lg hover:bg-yellow-50 transition-all group"
+                className="flex items-center justify-between w-full py-2 px-4 border-2 border-simstudio-yellow text-black font-medium rounded-lg hover:bg-yellow-50 transition-all group"
               >
                 <span>Make another booking</span>
                 <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform text-simstudio-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,15 +380,13 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               
               <a
                 href="/my-account"
-                className="flex items-center justify-between w-full py-3 px-5 border-2 border-gray-800 text-gray-800 font-medium rounded-lg hover:bg-gray-50 transition-all group"
+                className="flex items-center justify-between w-full py-2 px-4 border-2 border-gray-800 text-gray-800 font-medium rounded-lg hover:bg-gray-50 transition-all group"
               >
                 <span>View my bookings</span>
                 <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </a>
-              
-              {/* Removed "More information" and "Return to home" buttons as requested */}
             </div>
           </div>
         </div>
@@ -427,7 +409,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
               (selectedUserCredits !== null && selectedUserCredits < (sessionDetails?.hours || 0)) || 
               (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee)
                 ? handleProceedToCheckout
-                : handleSubmit
+                : handleFormSubmit
             }
             disabled={isSubmitting || localIsSubmitting}
             className={`py-3 px-6 font-bold rounded-lg transition-colors ${

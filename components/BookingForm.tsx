@@ -597,16 +597,18 @@ export default function BookingForm({ onSuccess, selectedUserId }: BookingFormPr
         throw new Error(errorData.error || 'Failed to create booking');
       }
 
-      setSuccess(true);
-      setFormData({
-        userId: selectedUserId || '', // Keep the userId
-        hours: 1,
-        wantsCoach: false,
-        coach: 'any',
-        coachHours: 1,
-        date: '',
-        sessionTime: ''
-      });
+      // Get the booking ID from the response
+      const bookingData = await response.json();
+      const bookingId = bookingData.id;
+      
+      console.log('Booking created successfully with ID:', bookingId);
+      
+      // Add a small delay to ensure the database has time to commit the booking
+      // before we redirect to the success page
+      setTimeout(() => {
+        // Redirect to checkout/success page
+        window.location.href = `/checkout/success?directBooking=true&bookingId=${bookingId}`;
+      }, 1000); // 1 second delay
       
       if (onSuccess) {
         onSuccess();

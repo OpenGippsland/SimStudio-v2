@@ -23,7 +23,8 @@ export default async function handler(
       .from('bookings')
       .update({ 
         payment_ref: paymentRef,
-        payment_status: status || 'confirmed'
+        payment_status: status || 'confirmed',
+        status: 'confirmed' // Also update the status field
       })
       .eq('id', bookingId)
       .select();

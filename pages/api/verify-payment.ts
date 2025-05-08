@@ -274,6 +274,7 @@ export default async function handler(
             .from('bookings')
             .update({ 
               payment_status: 'confirmed',
+              status: 'confirmed', // Also update the status field
               payment_ref: referenceId
             })
             .eq('id', bookingId);

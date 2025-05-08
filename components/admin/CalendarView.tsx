@@ -17,30 +17,38 @@ const simulatorColors = {
 
 export default function CalendarView() {
   const [bookings, setBookings] = useState<any[]>([]);
+  const [businessHours, setBusinessHours] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [view, setView] = useState('week');
+  const [date, setDate] = useState(new Date());
   const [filters, setFilters] = useState({
     simulator: 'all',
     coach: 'all'
   });
 
-  // Fetch bookings from API
-  const fetchBookings = async () => {
+  // Fetch bookings and business hours from API
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/bookings');
-      const data = await response.json();
-      setBookings(data);
+      // Fetch bookings
+      const bookingsResponse = await fetch('/api/bookings');
+      const bookingsData = await bookingsResponse.json();
+      setBookings(bookingsData);
+      
+      // Fetch business hours
+      const hoursResponse = await fetch('/api/business-hours');
+      const hoursData = await hoursResponse.json();
+      setBusinessHours(hoursData);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBookings();
+    fetchData();
   }, []);
 
   // Format bookings as calendar events
@@ -59,10 +67,11 @@ export default function CalendarView() {
       .map(booking => {
         const simulatorId = booking.simulator_id;
         const userName = booking.user_name || `User ${booking.user_id}`;
+        const coachName = booking.coach && booking.coach !== 'none' ? ` (Coach: ${booking.coach})` : '';
         
         return {
           id: booking.id,
-          title: `Sim #${simulatorId}: ${userName}`,
+          title: `Sim #${simulatorId}: ${userName}${coachName}`,
           start: new Date(booking.start_time),
           end: new Date(booking.end_time),
           resource: booking,
@@ -115,7 +124,7 @@ export default function CalendarView() {
       
       if (response.ok) {
         alert(`Booking cancelled successfully. ${data.refundedHours} hour(s) refunded.`);
-        fetchBookings();
+        fetchData();
         setSelectedEvent(null);
       } else {
         alert(data.error || 'Failed to cancel booking');
@@ -147,7 +156,7 @@ export default function CalendarView() {
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Booking Calendar</h2>
         <button 
-          onClick={fetchBookings}
+          onClick={fetchData}
           className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg"
         >
           {loading ? 'Refreshing...' : 'Refresh Calendar'}
@@ -209,6 +218,57 @@ export default function CalendarView() {
         </div>
       </div>
 
+      {/* Calendar Navigation */}
+      <div className="mb-4 flex justify-between items-center">
+        <button
+          onClick={() => {
+            const newDate = new Date(date);
+            if (view === 'day') {
+              newDate.setDate(newDate.getDate() - 1);
+            } else if (view === 'week') {
+              newDate.setDate(newDate.getDate() - 7);
+            } else if (view === 'month') {
+              newDate.setMonth(newDate.getMonth() - 1);
+            }
+            setDate(newDate);
+          }}
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg"
+        >
+          Previous {view}
+        </button>
+        
+        <h3 className="text-lg font-medium">
+          {view === 'day' && date.toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {view === 'week' && `Week of ${date.toLocaleDateString('en-AU', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+          {view === 'month' && date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+          {view === 'agenda' && 'Agenda View'}
+        </h3>
+        
+        <button
+          onClick={() => {
+            const newDate = new Date(date);
+            if (view === 'day') {
+              newDate.setDate(newDate.getDate() + 1);
+            } else if (view === 'week') {
+              newDate.setDate(newDate.getDate() + 7);
+            } else if (view === 'month') {
+              newDate.setMonth(newDate.getMonth() + 1);
+            }
+            setDate(newDate);
+          }}
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg"
+        >
+          Next {view}
+        </button>
+        
+        <button
+          onClick={() => setDate(new Date())}
+          className="bg-simstudio-yellow hover:bg-yellow-500 text-black font-medium py-2 px-4 rounded-lg ml-2"
+        >
+          Today
+        </button>
+      </div>
+
       {/* Calendar */}
       <div className="mb-6" style={{ height: 700 }}>
         <Calendar
@@ -220,10 +280,30 @@ export default function CalendarView() {
           onSelectEvent={handleSelectEvent}
           view={view as any}
           onView={(newView) => setView(newView)}
+          onNavigate={(newDate) => setDate(newDate)}
+          date={date}
           eventPropGetter={(event) => ({
             style: event.style
           })}
-          defaultDate={new Date()}
+          // Set min and max time to business hours
+          min={new Date(new Date().setHours(8, 0, 0))} // Default to 8:00 AM
+          max={new Date(new Date().setHours(18, 0, 0))} // Default to 6:00 PM
+          // Get day specific business hours if available
+          dayPropGetter={(date) => {
+            const dayOfWeek = date.getDay();
+            const dayHours = businessHours.find(h => h.day_of_week === dayOfWeek);
+            
+            // If the day is closed, highlight it
+            if (dayHours && dayHours.is_closed) {
+              return {
+                style: {
+                  backgroundColor: '#f8f9fa',
+                  opacity: 0.7
+                }
+              };
+            }
+            return {};
+          }}
         />
       </div>
 

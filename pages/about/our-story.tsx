@@ -44,13 +44,13 @@ export default function OurStoryPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Road focus</h3>
+                  <h3 className="text-xl font-bold mb-4 text-black">Road focus</h3>
                   <p className="text-lg">
                     Designed for learner drivers, advanced road safety training, and individuals looking to build confidence in a controlled, risk-free setting.
                   </p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Race focus</h3>
+                  <h3 className="text-xl font-bold mb-4 text-black">Race focus</h3>
                   <p className="text-lg">
                     Focused on motorsport coaching for drivers looking to enhance their skills, train for competitions, and maximise their performance in a structured environment.
                   </p>
@@ -141,13 +141,13 @@ export default function OurStoryPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Motorsport Clients</h3>
+                  <h3 className="text-xl font-bold mb-4 text-black">Motorsport Clients</h3>
                   <p className="text-lg">
                     More seat time at a lower cost, enhanced feedback loops, and the ability to train for any track, any conditions, any time.
                   </p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h3 className="text-xl font-bold mb-4 text-simstudio-yellow">Road Training Clients</h3>
+                  <h3 className="text-xl font-bold mb-4 text-black">Road Training Clients</h3>
                   <p className="text-lg">
                     Learn and refine skills in a controlled, pressure-free setting, with an emphasis on building confidence before taking to the road.
                   </p>

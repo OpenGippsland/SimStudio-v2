@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import PageHeader from '../components/layout/PageHeader';
 
@@ -8,12 +8,129 @@ export default function ContactPage() {
     email: '',
     phone: '',
     message: '',
-    subject: 'General Inquiry'
+    subject: '',
+    website: '', // Honeypot field
+    notes: ''    // Another honeypot field
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [businessHours, setBusinessHours] = useState<any[]>([]);
+  const formLoadTime = useRef(Date.now());
+  const [formToken, setFormToken] = useState('');
+  const [mathAnswer, setMathAnswer] = useState<number | null>(null);
+  
+  // Fetch business hours from the API and generate form token
+  useEffect(() => {
+    const fetchBusinessHours = async () => {
+      try {
+        const res = await fetch('/api/business-hours');
+        const data = await res.json();
+        setBusinessHours(data);
+      } catch (error) {
+        console.error('Error fetching business hours:', error);
+      }
+    };
+    
+    fetchBusinessHours();
+    
+    // Generate a random token for this form session
+    const randomToken = Math.random().toString(36).substring(2, 15) + 
+                        Math.random().toString(36).substring(2, 15);
+    setFormToken(randomToken);
+    
+    // Add some randomization to field names to confuse bots
+    const formFields = document.querySelectorAll('form input, form textarea, form select');
+    formFields.forEach(field => {
+      const originalName = field.getAttribute('name');
+      if (originalName && !originalName.includes('honeypot')) {
+        field.setAttribute('data-real-name', originalName);
+        const randomAttr = 'field_' + Math.random().toString(36).substring(2, 8);
+        field.setAttribute('name', randomAttr);
+      }
+    });
+    
+    // Generate a simple math challenge
+    const num1 = Math.floor(Math.random() * 10);
+    const num2 = Math.floor(Math.random() * 10);
+    setMathAnswer(num1 + num2);
+    
+    // Add the math challenge to a hidden field in the DOM
+    // This will be checked server-side
+    const mathChallengeElement = document.createElement('div');
+    mathChallengeElement.style.display = 'none';
+    mathChallengeElement.setAttribute('id', 'math-challenge');
+    mathChallengeElement.setAttribute('data-question', `${num1}+${num2}`);
+    mathChallengeElement.setAttribute('data-answer', `${num1 + num2}`);
+    document.body.appendChild(mathChallengeElement);
+  }, []);
+  
+  // Format business hours for display
+  const formatBusinessHours = () => {
+    if (!businessHours || businessHours.length === 0) {
+      return (
+        <>
+          <p className="mb-1">Monday - Friday: 9am - 9pm</p>
+          <p className="mb-1">Saturday: 10am - 6pm</p>
+          <p>Sunday: 10am - 4pm</p>
+        </>
+      );
+    }
+    
+    // Sort by day of week, but put Sunday at the end
+    const sortedHours = [...businessHours].sort((a, b) => {
+      // Convert 0 (Sunday) to 7 for sorting purposes
+      const dayA = a.day_of_week === 0 ? 7 : a.day_of_week;
+      const dayB = b.day_of_week === 0 ? 7 : b.day_of_week;
+      return dayA - dayB;
+    });
+    
+    // Group consecutive days with the same hours
+    const groupedHours: any[] = [];
+    let currentGroup: any = null;
+    
+    sortedHours.forEach((day) => {
+      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day.day_of_week];
+      
+      if (day.is_closed) {
+        groupedHours.push({ days: [dayName], hours: 'Closed' });
+        currentGroup = null;
+        return;
+      }
+      
+      const formattedHours = `${day.open_hour}:00 - ${day.close_hour}:00`;
+      
+      if (!currentGroup || currentGroup.hours !== formattedHours) {
+        currentGroup = { days: [dayName], hours: formattedHours };
+        groupedHours.push(currentGroup);
+      } else {
+        currentGroup.days.push(dayName);
+      }
+    });
+    
+    // Format the display
+    return groupedHours.map((group, index) => {
+      const isLast = index === groupedHours.length - 1;
+      let daysText = '';
+      
+      if (group.days.length === 1) {
+        daysText = group.days[0];
+      } else if (group.days.length === 2) {
+        daysText = `${group.days[0]} and ${group.days[1]}`;
+      } else {
+        const firstDay = group.days[0];
+        const lastDay = group.days[group.days.length - 1];
+        daysText = `${firstDay} - ${lastDay}`;
+      }
+      
+      return (
+        <p key={index} className={isLast ? '' : 'mb-1'}>
+          {daysText}: {group.hours}
+        </p>
+      );
+    });
+  };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -28,6 +145,42 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setSubmitError('');
     
+    // Anti-bot checks
+    const submissionTime = Date.now();
+    const timeElapsed = submissionTime - formLoadTime.current;
+    
+    // Check if honeypot fields are filled (bots often fill all fields)
+    if (formData.website !== '' || formData.notes !== '') {
+      console.log('Honeypot triggered - likely bot submission');
+      // Pretend the submission was successful to not alert the bot
+      setSubmitSuccess(true);
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Check if the form was submitted too quickly (less than 3 seconds)
+    if (timeElapsed < 3000) {
+      console.log('Form submitted too quickly - likely bot submission');
+      // Pretend the submission was successful to not alert the bot
+      setSubmitSuccess(true);
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Reconstruct the actual form data from data attributes
+    const form = e.target as HTMLFormElement;
+    const actualFormData: any = {};
+    
+    Array.from(form.elements).forEach((element: any) => {
+      if (element.dataset && element.dataset.realName) {
+        actualFormData[element.dataset.realName] = element.value;
+      }
+    });
+    
+    // Add the form token and math answer for server-side validation
+    actualFormData.formToken = formToken;
+    actualFormData.mathAnswer = mathAnswer;
+    
     try {
       // Send form data to the API endpoint
       const response = await fetch('/api/contact', {
@@ -35,7 +188,7 @@ export default function ContactPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(actualFormData),
       });
       
       const data = await response.json();
@@ -51,7 +204,9 @@ export default function ContactPage() {
         email: '',
         phone: '',
         message: '',
-        subject: 'General Inquiry'
+        subject: '',
+        website: '',
+        notes: ''
       });
     } catch (error) {
       console.error('Error submitting contact form:', error);
@@ -85,27 +240,47 @@ export default function ContactPage() {
                   <h2 className="text-2xl font-bold mb-6">Get In Touch</h2>
                   
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2 text-simstudio-yellow">Location</h3>
-                    <p className="mb-1">South Melbourne</p>
-                    <p>Victoria, Australia</p>
-                  </div>
-                  
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2 text-simstudio-yellow">Email</h3>
-                    <a href="mailto:hello@simstudio.com.au" className="text-gray-700 hover:text-simstudio-yellow transition-colors">
-                      hello@simstudio.com.au
+                    <h3 className="text-lg font-semibold mb-2 text-black flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path>
+                      </svg>
+                      Location
+                    </h3>
+                    <p className="mb-1">83 Gladstone Street, South Melbourne, VIC</p>
+                    <p className="mb-3">Victoria, Australia</p>
+                    <a 
+                      href="https://www.google.com/maps/dir/?api=1&destination=83+Gladstone+Street+South+Melbourne+VIC+Australia" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="inline-flex items-center"
+                    >
+                      <svg className="w-5 h-5 mr-1 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path>
+                      </svg>
+                      <span className="text-black hover:text-gray-700 transition-colors">Get Directions</span>
                     </a>
                   </div>
                   
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2 text-simstudio-yellow">Opening Hours</h3>
-                    <p className="mb-1">Monday - Friday: 9am - 9pm</p>
-                    <p className="mb-1">Saturday: 10am - 6pm</p>
-                    <p>Sunday: 10am - 4pm</p>
+                    <h3 className="text-lg font-semibold mb-2 text-black flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"></path>
+                      </svg>
+                      Opening Hours
+                    </h3>
+                    <p className="mb-3 text-sm italic text-gray-600">
+                      By appointment only. Please book online to reserve your simulator session.
+                    </p>
+                    {formatBusinessHours()}
                   </div>
                   
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2 text-simstudio-yellow">Follow Us</h3>
+                    <h3 className="text-lg font-semibold mb-2 text-black flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
+                      </svg>
+                      Follow Us
+                    </h3>
                     <div className="flex space-x-4">
                       <a href="https://facebook.com/@simstudio.au" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-simstudio-yellow">
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -180,20 +355,16 @@ export default function ContactPage() {
                       
                       <div>
                         <label htmlFor="subject" className="block mb-2 font-medium">Subject*</label>
-                        <select
+                        <input
+                          type="text"
                           id="subject"
                           name="subject"
                           value={formData.subject}
                           onChange={handleChange}
                           required
+                          placeholder="What is your message about?"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-simstudio-yellow focus:border-simstudio-yellow"
-                        >
-                          <option value="General Inquiry">General Inquiry</option>
-                          <option value="Booking Question">Booking Question</option>
-                          <option value="Corporate Training">Corporate Training</option>
-                          <option value="Feedback">Feedback</option>
-                          <option value="Other">Other</option>
-                        </select>
+                        />
                       </div>
                       
                       <div>
@@ -206,6 +377,32 @@ export default function ContactPage() {
                           required
                           rows={5}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-simstudio-yellow focus:border-simstudio-yellow"
+                        ></textarea>
+                      </div>
+                      
+                      {/* Hidden trap fields - invisible to humans */}
+                      <div style={{ opacity: 0, position: 'absolute', top: '-9999px', left: '-9999px' }}>
+                        <label htmlFor="company_url">Company Website</label>
+                        <input
+                          type="text"
+                          id="company_url"
+                          name="website"
+                          value={formData.website}
+                          onChange={handleChange}
+                          tabIndex={-1}
+                          autoComplete="off"
+                        />
+                      </div>
+                      
+                      <div style={{ display: 'none' }}>
+                        <label htmlFor="additional_info">Additional Information</label>
+                        <textarea
+                          id="additional_info"
+                          name="notes"
+                          value={formData.notes}
+                          onChange={handleChange}
+                          tabIndex={-1}
+                          autoComplete="off"
                         ></textarea>
                       </div>
                       

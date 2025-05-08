@@ -14,7 +14,7 @@ const Footer = () => {
               className="h-8 mb-4"
             />
             <p className="text-sm mb-4">
-              South Melbourne studio opening May 2025. Our driving simulator training facility offers structured coaching, guided programs, and regular seat time.
+              Our driving simulator training facility offers structured coaching, guided programs, and regular seat time.
             </p>
           </div>
           
@@ -22,23 +22,30 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-4 text-simstudio-yellow">Quick Links</h3>
             <ul className="space-y-2">
-              <li><Link href="/about" className="hover:text-simstudio-yellow transition-colors">About Us</Link></li>
-              <li><Link href="/booking" className="hover:text-simstudio-yellow transition-colors">Book a Session</Link></li>
-              <li><Link href="/contact" className="hover:text-simstudio-yellow transition-colors">Contact Us</Link></li>
-              <li><Link href="/blog" className="hover:text-simstudio-yellow transition-colors">Blog</Link></li>
+              <li><Link href="/" className="hover:text-simstudio-yellow transition-colors">Home</Link></li>
+              <li><Link href="/about" className="hover:text-simstudio-yellow transition-colors">About</Link></li>
+              <li><Link href="/booking" className="hover:text-simstudio-yellow transition-colors">Booking</Link></li>
               <li><Link href="/shop" className="hover:text-simstudio-yellow transition-colors">Shop</Link></li>
+              <li><Link href="/contact" className="hover:text-simstudio-yellow transition-colors">Contact</Link></li>
             </ul>
           </div>
           
           {/* Column 3: Contact Info */}
           <div>
             <h3 className="text-lg font-bold mb-4 text-simstudio-yellow">Contact Us</h3>
-            <p className="mb-2">South Melbourne, VIC</p>
-            <p className="mb-2">
-              <a href="mailto:hello@simstudio.com.au" className="hover:text-simstudio-yellow transition-colors">
-                hello@simstudio.com.au
-              </a>
-            </p>
+            <p className="mb-2">83 Gladstone Street, South Melbourne, VIC</p>
+            <p className="mb-2">Victoria, Australia</p>
+            <a 
+              href="https://www.google.com/maps/dir/?api=1&destination=83+Gladstone+Street+South+Melbourne+VIC+Australia" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center mb-4"
+            >
+              <svg className="w-5 h-5 mr-1 text-simstudio-yellow" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path>
+              </svg>
+              <span className="text-white hover:text-simstudio-yellow transition-colors">Get Directions</span>
+            </a>
             <div className="flex space-x-4 mt-4">
               <a href="https://facebook.com/@simstudio.au" target="_blank" rel="noopener noreferrer" className="text-white hover:text-simstudio-yellow">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">

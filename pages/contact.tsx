@@ -69,7 +69,7 @@ export default function ContactPage() {
     <>
       {/* Page Header */}
       <PageHeader 
-        title="CONTACT US"
+        title="Contact us"
         subtitle="Have questions or want to learn more? Get in touch with our team."
         useCarbonBg={false}
       />

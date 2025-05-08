@@ -424,7 +424,7 @@ export default function CheckoutSuccess() {
   return (
     <div className="container mx-auto py-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-4">Payment Confirmation</h1>
+        <h1 className="text-2xl font-bold mb-4">Confirmation</h1>
         
         {loading && verificationStatus === 'pending' ? (
           <div className="flex flex-col items-center justify-center py-8">

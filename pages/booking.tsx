@@ -52,7 +52,7 @@ export default function BookingPage() {
       
       {/* Page Header */}
       <PageHeader 
-        title="BOOK A SESSION"
+        title="Book a session"
         subtitle="Reserve your simulator time and take the first step towards improving your driving skills."
         useCarbonBg={false}
       />

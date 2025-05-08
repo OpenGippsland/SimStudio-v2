@@ -1,6 +1,21 @@
 import { signIn } from 'next-auth/react';
 
 /**
+ * Formats a user's name consistently across the application
+ * Prioritizes first_name + last_name, falls back to name, then email
+ */
+export function formatUserName(user: any) {
+  if (user.first_name && user.last_name) {
+    return `${user.first_name} ${user.last_name}`;
+  } else if (user.name) {
+    return user.name;
+  } else if (user.email) {
+    return user.email.split('@')[0];
+  }
+  return 'Unknown User';
+}
+
+/**
  * Utility function to handle login with NextAuth
  * This tries to log in with credentials first, and if that fails,
  * it tries to use a magic link as a fallback
@@ -73,11 +88,13 @@ export async function createAccountWithoutConfirmation(
 ): Promise<any> {
   try {
     // Create a new account using NextAuth credentials provider in register mode
+    // Map snake_case database fields to camelCase form fields
     const result = await signIn('credentials', {
       email,
       password,
       firstName: userData.first_name || '',
       lastName: userData.last_name || '',
+      mobileNumber: userData.mobile_number || '',
       mode: 'register',
       redirect: false,
     });

@@ -139,6 +139,9 @@ export const authOptions: NextAuthOptions = {
             const newUser = await createUser({ 
               email: credentials.email,
               name: name,
+              // Map camelCase form fields to snake_case database fields
+              first_name: credentials.firstName || null,
+              last_name: credentials.lastName || null,
               mobile_number: credentials.mobileNumber || null
             });
             

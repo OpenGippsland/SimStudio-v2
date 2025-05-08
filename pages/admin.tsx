@@ -11,10 +11,11 @@ import SpecialDatesForm from '../components/admin/SpecialDatesForm'
 import BookingsManager from '../components/admin/BookingsManager'
 import UserManager from '../components/admin/UserManager'
 import CoachProfileManager from '../components/admin/CoachProfileManager'
+import CalendarView from '../components/admin/CalendarView'
 
 // Main Admin Page
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('bookings')
+  const [activeTab, setActiveTab] = useState('calendar')
   const { user, loading } = useAuth()
   const router = useRouter()
   
@@ -60,6 +61,16 @@ export default function AdminPage() {
           {/* Tab Navigation */}
           <div className="mb-6 border-b border-gray-200">
             <nav className="flex space-x-8 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`py-4 px-1 font-medium text-sm border-b-2 ${
+                  activeTab === 'calendar'
+                    ? 'border-simstudio-yellow text-simstudio-yellow'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Calendar
+              </button>
               <button
                 onClick={() => setActiveTab('bookings')}
                 className={`py-4 px-1 font-medium text-sm border-b-2 ${
@@ -147,6 +158,7 @@ export default function AdminPage() {
           <div className="mb-8">
             {activeTab === 'users' && <UserManager />}
             {activeTab === 'bookings' && <BookingsManager />}
+            {activeTab === 'calendar' && <CalendarView />}
             {activeTab === 'business-hours' && <BusinessHoursForm />}
             {activeTab === 'special-dates' && <SpecialDatesForm />}
             {activeTab === 'packages' && <PackageManager />}

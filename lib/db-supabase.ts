@@ -23,7 +23,18 @@ export async function getUserByEmail(email: string) {
   return data || null;
 }
 
-export async function createUser(userData: { email: string, name?: string, mobile_number?: string }) {
+export async function createUser(userData: { 
+  email: string, 
+  name?: string, 
+  first_name?: string, 
+  last_name?: string, 
+  mobile_number?: string 
+}) {
+  // If first_name and last_name are provided but name isn't, generate it
+  if (!userData.name && userData.first_name && userData.last_name) {
+    userData.name = `${userData.first_name} ${userData.last_name}`.trim();
+  }
+  
   const { data, error } = await supabase
     .from('users')
     .insert(userData)

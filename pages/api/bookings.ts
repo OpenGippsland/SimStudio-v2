@@ -645,6 +645,27 @@ export default async function handler(
         updatedCredits = credits;
       }
       
+      // Send booking confirmation email if this is not a temporary booking
+      if (!isTemporaryBooking) {
+        try {
+          // Call the booking confirmation email API
+          const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || ''}/api/send-booking-confirmation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ bookingId: booking.id }),
+          });
+          
+          if (!emailResponse.ok) {
+            console.error('Failed to send booking confirmation email:', await emailResponse.text());
+          }
+        } catch (emailError) {
+          // Log the error but don't fail the booking creation
+          console.error('Error sending booking confirmation email:', emailError);
+        }
+      }
+      
       return res.status(201).json({ 
         id: booking.id,
         creditsRemaining: updatedCredits.simulator_hours,
@@ -703,10 +724,20 @@ export default async function handler(
         return res.status(400).json({ error: 'Invalid booking ID' });
       }
       
-      // Get the booking to check if it exists and to get the user_id and booking hours
+      // Get the full booking details before doing anything else
+      // This ensures we have all the data needed for the email and refund
       const { data: booking, error: getBookingError } = await supabase
         .from('bookings')
-        .select('id, user_id, start_time, end_time')
+        .select(`
+          id, 
+          user_id, 
+          simulator_id,
+          start_time, 
+          end_time,
+          coach,
+          coaching_fee,
+          status
+        `)
         .eq('id', bookingId)
         .single();
       
@@ -715,6 +746,18 @@ export default async function handler(
           return res.status(404).json({ error: 'Booking not found' });
         }
         throw getBookingError;
+      }
+      
+      // Get user details for the email
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email, name')
+        .eq('id', booking.user_id)
+        .single();
+        
+      if (userError) {
+        console.error('Error fetching user details for cancellation email:', userError);
+        // Continue with the cancellation process even if we can't get the user details
       }
       
       // Calculate booking hours to refund
@@ -769,6 +812,38 @@ export default async function handler(
           success: true, 
           message: 'Booking cancelled, but credits could not be refunded' 
         });
+      }
+      
+      // Send booking cancellation email BEFORE deleting the booking
+      try {
+        // Prepare the email payload with the booking and user details we already have
+        const emailPayload = { 
+          bookingId: bookingId,
+          reason: req.body?.reason || 'Cancelled by user',
+          bookingDetails: {
+            ...booking,
+            users: userData || { email: 'unknown', name: 'Customer' }
+          }
+        };
+        
+        console.log('Sending cancellation email with payload:', JSON.stringify(emailPayload));
+        
+        const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || ''}/api/send-booking-cancellation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(emailPayload),
+        });
+        
+        if (!emailResponse.ok) {
+          console.error('Failed to send booking cancellation email:', await emailResponse.text());
+        } else {
+          console.log('Successfully sent booking cancellation email');
+        }
+      } catch (emailError) {
+        // Log the error but don't fail the booking cancellation
+        console.error('Error sending booking cancellation email:', emailError);
       }
       
       return res.status(200).json({ 

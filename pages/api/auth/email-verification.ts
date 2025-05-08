@@ -23,8 +23,13 @@ export default async function handler(
     
     // If user doesn't exist, create a new user with the mobile number
     if (!existingUser) {
+      // For magic link registration, we don't have first/last name
+      // We'll extract a name from the email if needed
+      const emailName = email.split('@')[0];
+      
       await createUser({ 
         email,
+        name: emailName,
         mobile_number: mobileNumber || null
       });
     } else if (mobileNumber && !existingUser.mobile_number) {

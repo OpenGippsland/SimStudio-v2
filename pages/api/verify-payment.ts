@@ -453,6 +453,29 @@ export default async function handler(
         }
       }
       
+      // Send payment confirmation email
+      try {
+        console.log(`[${requestId}] Sending payment confirmation email`);
+        
+        // Call the payment confirmation email API
+        const emailResponse = await fetch(`${process.env.NEXTAUTH_URL || ''}/api/send-payment-confirmation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ referenceId }),
+        });
+        
+        if (!emailResponse.ok) {
+          console.error(`[${requestId}] Failed to send payment confirmation email:`, await emailResponse.text());
+        } else {
+          console.log(`[${requestId}] Payment confirmation email sent successfully`);
+        }
+      } catch (emailError) {
+        // Log the error but don't fail the payment verification
+        console.error(`[${requestId}] Error sending payment confirmation email:`, emailError);
+      }
+      
       console.log(`[${requestId}] Payment verification and credit addition completed successfully`);
       
       return res.status(200).json({

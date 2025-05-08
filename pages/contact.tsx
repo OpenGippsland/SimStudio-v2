@@ -41,15 +41,22 @@ export default function ContactPage() {
     setFormToken(randomToken);
     
     // Add some randomization to field names to confuse bots
-    const formFields = document.querySelectorAll('form input, form textarea, form select');
-    formFields.forEach(field => {
-      const originalName = field.getAttribute('name');
-      if (originalName && !originalName.includes('honeypot')) {
-        field.setAttribute('data-real-name', originalName);
-        const randomAttr = 'field_' + Math.random().toString(36).substring(2, 8);
-        field.setAttribute('name', randomAttr);
-      }
-    });
+    setTimeout(() => {
+      console.log('Randomizing field names for anti-bot protection');
+      const formFields = document.querySelectorAll('form input, form textarea, form select');
+      formFields.forEach(field => {
+        const originalName = field.getAttribute('name');
+        const fieldId = field.getAttribute('id');
+        console.log(`Processing field: ${fieldId}, original name: ${originalName}`);
+        
+        if (originalName && !originalName.includes('honeypot')) {
+          field.setAttribute('data-real-name', originalName);
+          const randomAttr = 'field_' + Math.random().toString(36).substring(2, 8);
+          field.setAttribute('name', randomAttr);
+          console.log(`Field ${fieldId}: Set data-real-name=${originalName}, randomized name=${randomAttr}`);
+        }
+      });
+    }, 500); // Small delay to ensure the form is fully rendered
     
     // Generate a simple math challenge
     const num1 = Math.floor(Math.random() * 10);
@@ -133,11 +140,23 @@ export default function ContactPage() {
   };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { value } = e.target;
+    // Use data-real-name if available (for randomized fields), otherwise use name
+    const realName = e.target.getAttribute('data-real-name') || e.target.name;
+    
+    console.log('Field changed:', {
+      element: e.target.id,
+      realName,
+      value
+    });
+    
+    // Ensure we're updating the correct field in the form data
+    if (realName) {
+      setFormData(prev => ({
+        ...prev,
+        [realName]: value
+      }));
+    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -372,6 +391,7 @@ export default function ContactPage() {
                         <textarea
                           id="message"
                           name="message"
+                          data-real-name="message"
                           value={formData.message}
                           onChange={handleChange}
                           required

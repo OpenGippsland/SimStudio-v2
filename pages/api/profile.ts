@@ -58,6 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .from('users')
             .update({ 
               name: fullName,
+              first_name: firstName || null,
+              last_name: lastName || null,
               mobile_number: mobileNumber,
               updated_at: new Date().toISOString()
             })

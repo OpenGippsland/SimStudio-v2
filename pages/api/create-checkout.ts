@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '../../lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -55,6 +56,93 @@ export default async function handler(
     // Calculate amount in cents
     const amountInCents = Math.round(amount * 100);
     
+    // Debug log to see what's happening with user info
+    console.log('User info received in create-checkout:', JSON.stringify(userInfo, null, 2));
+    
+    // Get user data from database to ensure we have the most up-to-date information
+    // This is a workaround for the issue where the user's first_name and last_name fields
+    // are not being correctly passed from the frontend
+    let firstName = userInfo?.firstName || '';
+    let lastName = userInfo?.lastName || '';
+    
+    // If we have a userId, try to get the user's first_name and last_name from the database
+    if (userId) {
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('first_name, last_name, name')
+          .eq('id', parseInt(userId))
+          .single();
+        
+        if (!error && userData) {
+          console.log('User data from database:', JSON.stringify(userData, null, 2));
+          
+          // Use the database values if they exist
+          if (userData.first_name) firstName = userData.first_name;
+          if (userData.last_name) lastName = userData.last_name;
+          
+          // If both are still empty but name exists, try to extract from name
+          if (!firstName && !lastName && userData.name && userData.name.includes(' ')) {
+            const nameParts = userData.name.split(' ');
+            firstName = nameParts[0] || '';
+            lastName = nameParts.slice(1).join(' ') || '';
+          }
+          
+          console.log('Using name data:', { firstName, lastName });
+        }
+      } catch (error) {
+        console.error('Error fetching user data from database:', error);
+      }
+    }
+    
+    // Prepare pre-populated data
+    const prePopulatedData: any = {
+      buyer_email: userInfo?.email || '',
+      buyer_address: {
+        first_name: firstName || userInfo?.firstName || '',
+        last_name: lastName || userInfo?.lastName || '',
+        address_line_1: '',
+        locality: '',
+        administrative_district_level_1: '',
+        postal_code: '',
+        country: 'AU'
+      }
+    };
+    
+    // Add first and last name directly to the pre-populated data
+    // This is a workaround for a Square issue where the name in buyer_address is not always used
+    prePopulatedData.first_name = firstName || userInfo?.firstName || '';
+    prePopulatedData.last_name = lastName || userInfo?.lastName || '';
+    
+    // Only add phone number if it exists and is valid
+    if (userInfo?.phoneNumber) {
+      // Validate phone number format for Square (E.164 format)
+      // For Australian numbers, this should be +61XXXXXXXXX (total 12 characters)
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      
+      // Format the phone number if needed
+      let formattedPhone = userInfo.phoneNumber;
+      
+      // If it's an Australian number without the + prefix, add it
+      if (formattedPhone.startsWith('61') && !formattedPhone.startsWith('+')) {
+        formattedPhone = '+' + formattedPhone;
+      }
+      
+      // If it's an Australian mobile starting with 0, convert to +61 format
+      if (formattedPhone.startsWith('0') && formattedPhone.length === 10) {
+        formattedPhone = '+61' + formattedPhone.substring(1);
+      }
+      
+      // Final validation check
+      if (phoneRegex.test(formattedPhone)) {
+        console.log('Valid phone number format:', formattedPhone);
+        prePopulatedData.buyer_phone_number = formattedPhone;
+        prePopulatedData.buyer_address.phone_number = formattedPhone;
+      } else {
+        console.log('Invalid phone number format, not including in request:', formattedPhone);
+      }
+    }
+    
     // Create checkout link request
     const checkoutRequest = {
       idempotency_key: uuidv4(),
@@ -63,17 +151,8 @@ export default async function handler(
         redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?ref=${referenceId}${fromBooking ? '&fromBooking=true' : ''}`,
         merchant_support_email: process.env.MERCHANT_SUPPORT_EMAIL || 'support@simstudio.com',
         ask_for_shipping_address: false,
-        // Add pre-populated buyer information if available
-        ...(userInfo?.email && { pre_populate_buyer_email: userInfo.email }),
-        ...(userInfo?.firstName && userInfo?.lastName && {
-          pre_populate_shipping_address: {
-            first_name: userInfo.firstName,
-            last_name: userInfo.lastName,
-            country: "AU", // Set country to Australia
-            ...(userInfo?.phoneNumber && { phone_number: userInfo.phoneNumber }) // Include phone number when available
-          }
-        })
       },
+      pre_populated_data: prePopulatedData,
       order: {
         location_id: locationId,
         reference_id: referenceId,
@@ -108,15 +187,25 @@ export default async function handler(
     console.log('User information being sent to Square:', {
       email: userInfo?.email,
       firstName: userInfo?.firstName,
-      lastName: userInfo?.lastName,
+      lastName: userInfo?.lastName || '',
+      phoneNumber: userInfo?.phoneNumber || '',
       country: 'AU'
     });
+    
+    // Log the pre-populated data for debugging
+    console.log('Pre-populated data being sent to Square:', JSON.stringify(prePopulatedData, null, 2));
+    
+    // Log the full checkout request for debugging
+    console.log('Full checkout request being sent to Square:', JSON.stringify(checkoutRequest, null, 2));
+    
+    // Log the full checkout request options for debugging
+    console.log('Checkout options being sent to Square:', JSON.stringify(checkoutRequest.checkout_options, null, 2));
     
     // Call Square API
     const checkoutResponse = await fetch(`${baseUrl}/v2/online-checkout/payment-links`, {
       method: 'POST',
       headers: {
-        'Square-Version': '2023-09-25',
+        'Square-Version': '2024-05-04',
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },

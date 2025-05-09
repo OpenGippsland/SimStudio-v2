@@ -72,7 +72,7 @@ export default async function handler(
     const orderResponse = await fetch(`${baseUrl}/v2/orders/search`, {
       method: 'POST',
       headers: {
-        'Square-Version': '2023-09-25',
+        'Square-Version': '2024-05-04',
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },

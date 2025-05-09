@@ -38,6 +38,28 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
   // Coach profiles and rates
   const [coachProfiles, setCoachProfiles] = useState<CoachProfile[]>([]);
   const [coachRates, setCoachRates] = useState<Record<string, number>>({});
+  
+  // Hourly rate for simulator
+  const [hourlyRate, setHourlyRate] = useState<number>(120); // Default to 120 until fetched
+
+  // Fetch hourly rate when component mounts
+  useEffect(() => {
+    const fetchHourlyRate = async () => {
+      try {
+        const response = await fetch('/api/hourly-rate');
+        if (response.ok) {
+          const data = await response.json();
+          setHourlyRate(parseFloat(data.price));
+        } else {
+          console.error('Failed to fetch hourly rate');
+        }
+      } catch (error) {
+        console.error('Error fetching hourly rate:', error);
+      }
+    };
+
+    fetchHourlyRate();
+  }, []);
 
   // Fetch coaches and their rates on component mount
   useEffect(() => {
@@ -143,9 +165,14 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
               </p>
             )}
             {selectedUserCredits < formData.hours && (
-              <p className="text-sm text-red-600 mt-2 font-medium">
-                Warning: Not enough credits for this booking!
-              </p>
+              <div className="mt-2">
+                <p className="text-sm text-red-600 font-medium">
+                  Warning: Not enough credits for this booking!
+                </p>
+                <p className="text-sm text-gray-700 mt-1">
+                  You'll need to purchase {formData.hours - selectedUserCredits} more {(formData.hours - selectedUserCredits) === 1 ? 'hour' : 'hours'} (${((formData.hours - selectedUserCredits) * hourlyRate).toFixed(2)})
+                </p>
+              </div>
             )}
           </>
         ) : (
@@ -154,7 +181,7 @@ const BookingFormStep1: React.FC<BookingFormStep1Props> = ({
               Guest Booking
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              You'll need to purchase {formData.hours} {formData.hours === 1 ? 'hour' : 'hours'} during checkout.
+              You'll need to purchase {formData.hours} {formData.hours === 1 ? 'hour' : 'hours'} (${(formData.hours * hourlyRate).toFixed(2)}) during checkout.
             </p>
           </>
         )}

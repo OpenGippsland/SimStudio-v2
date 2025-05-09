@@ -44,7 +44,9 @@ export async function loadSquareSdk(appId: string): Promise<any> {
       
       // Create script element
       const script = document.createElement('script');
-      const isProduction = process.env.SQUARE_ENVIRONMENT === 'production';
+      // Check if we're using the sandbox app ID (which contains 'sandbox' in it)
+      const isProduction = !appId.includes('sandbox');
+      console.log('Square environment:', isProduction ? 'production' : 'sandbox');
       script.src = getSquareSdkUrl(isProduction);
       script.async = true;
       script.onload = () => {

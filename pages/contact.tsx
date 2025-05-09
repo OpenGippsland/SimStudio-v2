@@ -40,37 +40,15 @@ export default function ContactPage() {
                         Math.random().toString(36).substring(2, 15);
     setFormToken(randomToken);
     
-    // Add some randomization to field names to confuse bots
-    setTimeout(() => {
-      console.log('Randomizing field names for anti-bot protection');
-      const formFields = document.querySelectorAll('form input, form textarea, form select');
-      formFields.forEach(field => {
-        const originalName = field.getAttribute('name');
-        const fieldId = field.getAttribute('id');
-        console.log(`Processing field: ${fieldId}, original name: ${originalName}`);
-        
-        if (originalName && !originalName.includes('honeypot')) {
-          field.setAttribute('data-real-name', originalName);
-          const randomAttr = 'field_' + Math.random().toString(36).substring(2, 8);
-          field.setAttribute('name', randomAttr);
-          console.log(`Field ${fieldId}: Set data-real-name=${originalName}, randomized name=${randomAttr}`);
-        }
-      });
-    }, 500); // Small delay to ensure the form is fully rendered
+    // We've removed the field name randomization for better Safari compatibility
     
     // Generate a simple math challenge
     const num1 = Math.floor(Math.random() * 10);
     const num2 = Math.floor(Math.random() * 10);
     setMathAnswer(num1 + num2);
     
-    // Add the math challenge to a hidden field in the DOM
-    // This will be checked server-side
-    const mathChallengeElement = document.createElement('div');
-    mathChallengeElement.style.display = 'none';
-    mathChallengeElement.setAttribute('id', 'math-challenge');
-    mathChallengeElement.setAttribute('data-question', `${num1}+${num2}`);
-    mathChallengeElement.setAttribute('data-answer', `${num1 + num2}`);
-    document.body.appendChild(mathChallengeElement);
+    // We'll add the math challenge directly in the form HTML instead of using JavaScript
+    // This is more compatible with Safari
   }, []);
   
   // Format business hours for display
@@ -140,23 +118,19 @@ export default function ContactPage() {
   };
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { value } = e.target;
-    // Use data-real-name if available (for randomized fields), otherwise use name
-    const realName = e.target.getAttribute('data-real-name') || e.target.name;
+    const { name, value } = e.target;
+    // Use the actual name attribute since we're no longer randomizing it
     
     console.log('Field changed:', {
       element: e.target.id,
-      realName,
+      name,
       value
     });
     
-    // Ensure we're updating the correct field in the form data
-    if (realName) {
-      setFormData(prev => ({
-        ...prev,
-        [realName]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -186,15 +160,8 @@ export default function ContactPage() {
       return;
     }
     
-    // Reconstruct the actual form data from data attributes
-    const form = e.target as HTMLFormElement;
-    const actualFormData: any = {};
-    
-    Array.from(form.elements).forEach((element: any) => {
-      if (element.dataset && element.dataset.realName) {
-        actualFormData[element.dataset.realName] = element.value;
-      }
-    });
+    // Use the form data directly since we're not randomizing field names anymore
+    const actualFormData: any = { ...formData };
     
     // Add the form token and math answer for server-side validation
     actualFormData.formToken = formToken;
@@ -343,6 +310,7 @@ export default function ContactPage() {
                           value={formData.name}
                           onChange={handleChange}
                           required
+                          autoComplete="name"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-simstudio-yellow focus:border-simstudio-yellow"
                         />
                       </div>
@@ -356,6 +324,7 @@ export default function ContactPage() {
                           value={formData.email}
                           onChange={handleChange}
                           required
+                          autoComplete="email"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-simstudio-yellow focus:border-simstudio-yellow"
                         />
                       </div>
@@ -368,6 +337,7 @@ export default function ContactPage() {
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
+                          autoComplete="tel"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-simstudio-yellow focus:border-simstudio-yellow"
                         />
                       </div>
@@ -391,11 +361,11 @@ export default function ContactPage() {
                         <textarea
                           id="message"
                           name="message"
-                          data-real-name="message"
                           value={formData.message}
                           onChange={handleChange}
                           required
                           rows={5}
+                          placeholder="Type your message here..."
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-simstudio-yellow focus:border-simstudio-yellow"
                         ></textarea>
                       </div>
@@ -425,6 +395,13 @@ export default function ContactPage() {
                           autoComplete="off"
                         ></textarea>
                       </div>
+                      
+                      {/* Hidden math challenge field - added directly to the form for Safari compatibility */}
+                      <input 
+                        type="hidden" 
+                        name="math_challenge" 
+                        value={`${mathAnswer}`} 
+                      />
                       
                       <button
                         type="submit"

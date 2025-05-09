@@ -100,7 +100,7 @@ export default async function handler(
     const paymentResponse = await fetch(`${baseUrl}/v2/payments`, {
       method: 'POST',
       headers: {
-        'Square-Version': '2023-09-25',
+        'Square-Version': '2024-05-04',
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -119,8 +119,26 @@ export default async function handler(
     
     const payment = paymentData.payment;
     
-    // Use coachHours if provided, otherwise calculate based on amount
-    const hours = coachHours || Math.floor(amount / 50);
+    // Fetch the hourly rate from the database
+    const { data: hourlyRateData, error: hourlyRateError } = await supabase
+      .from('packages')
+      .select('price')
+      .eq('name', 'hourly_rate')
+      .single();
+    
+    let hourlyRate = 120; // Default to 120 if there's an error
+    
+    if (hourlyRateError) {
+      console.error('Error fetching hourly rate:', hourlyRateError);
+    } else {
+      // Make sure we're working with a number
+      hourlyRate = typeof hourlyRateData.price === 'string' 
+        ? parseFloat(hourlyRateData.price) 
+        : hourlyRateData.price;
+    }
+    
+    // Use coachHours if provided, otherwise calculate based on amount and hourly rate
+    const hours = coachHours || Math.floor(amount / hourlyRate);
     
     // Only add credits to user account if not a guest user
     if (!isGuestUser) {
@@ -180,20 +198,9 @@ export default async function handler(
     });
   } catch (error: any) {
     console.error('Payment error:', error);
-    
-    // For testing purposes, always return success even if there's an error
-    // Default to 2 hours if amount is not available
-    const defaultAmount = 100; // $100 = 2 hours
-    const safeAmount = req.body?.amount || defaultAmount;
-    const hours = req.body?.coachHours || Math.floor(safeAmount / 50);
-    
-    return res.status(200).json({
-      success: true,
-      paymentId: `emergency_fallback_${uuidv4()}`,
-      hours: hours,
-      coachingFee: req.body?.coachingFee || 0,
-      simulated: true,
-      error_message: error.message || 'Payment processing failed but bypassed for testing'
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Payment processing failed' 
     });
   }
 }

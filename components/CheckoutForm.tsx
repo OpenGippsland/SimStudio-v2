@@ -66,13 +66,108 @@ export default function CheckoutForm({
       setError('');
       
       // Get user information from auth context
+      // Always prioritize first_name and last_name fields over name field
+      let firstName = user?.first_name || '';
+      let lastName = user?.last_name || '';
+      
+      // Only if both first_name and last_name are empty, try to extract from name field
+      if (!firstName && !lastName && user?.name) {
+        const nameParts = user.name.split(' ');
+        firstName = nameParts[0] || '';
+        lastName = (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
+      }
+      
+      // Debug log to see what's happening
+      console.log('User data from database:', {
+        first_name: user?.first_name,
+        last_name: user?.last_name,
+        name: user?.name,
+        extractedFirstName: firstName,
+        extractedLastName: lastName
+      });
+      
+      // Force refresh user data from database to ensure we have the latest values
+      await refreshUser();
+      
+      // After refresh, check again for first_name and last_name
+      if (user?.first_name) firstName = user.first_name;
+      if (user?.last_name) lastName = user.last_name;
+      
+      console.log('User data after refresh:', {
+        first_name: user?.first_name,
+        last_name: user?.last_name,
+        name: user?.name,
+        finalFirstName: firstName,
+        finalLastName: lastName
+      });
+      
       const userInfo = {
         email: user?.email || authUser?.email || '',
-        firstName: user?.name?.split(' ')[0] || '',
-        lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+        firstName: firstName,
+        lastName: lastName,
         phoneNumber: user?.mobile_number || '' // Use the mobile_number field from the users table
-        // Note: Make sure phone numbers are in international format for Australia (e.g., +61XXXXXXXXX)
       };
+      
+      // Log the user information for debugging
+      console.log('User information being sent to checkout:', {
+        name: user?.name,
+        first_name: user?.first_name,
+        last_name: user?.last_name,
+        email: user?.email,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName
+      });
+      
+      // Log the user information for debugging
+      console.log('User information from auth context:', {
+        name: user?.name,
+        email: user?.email,
+        authEmail: authUser?.email,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
+        phoneNumber: user?.mobile_number
+      });
+      
+      // Format phone number to international format if it's not already
+      if (userInfo.phoneNumber) {
+        try {
+          // Remove any non-digit characters
+          let digits = userInfo.phoneNumber.replace(/\D/g, '');
+          
+          // Australian mobile numbers are 10 digits starting with 04
+          // After removing the leading 0, they should be 9 digits starting with 4
+          if (digits.startsWith('0') && digits.length === 10) {
+            // Remove the leading 0
+            digits = digits.substring(1);
+            
+            // Format as +61XXXXXXXXX
+            userInfo.phoneNumber = '+61' + digits;
+            console.log('Formatted Australian mobile number:', userInfo.phoneNumber);
+          } 
+          // If it starts with 61, make sure it has a + prefix
+          else if (digits.startsWith('61') && digits.length === 11) {
+            userInfo.phoneNumber = '+' + digits;
+            console.log('Formatted number with country code:', userInfo.phoneNumber);
+          }
+          // Otherwise, try to format as +61XXXXXXXXX
+          else {
+            // If it's 9 digits and starts with 4, it's likely an Australian mobile without the leading 0
+            if (digits.length === 9 && digits.startsWith('4')) {
+              userInfo.phoneNumber = '+61' + digits;
+              console.log('Formatted 9-digit number as Australian mobile:', userInfo.phoneNumber);
+            } else {
+              // For any other format, try to make it E.164 compliant
+              userInfo.phoneNumber = '+61' + digits;
+              console.log('Attempted to format unknown number format:', userInfo.phoneNumber);
+            }
+          }
+        } catch (error) {
+          console.error('Error formatting phone number:', error);
+          delete userInfo.phoneNumber; // Remove the property if there's any error
+        }
+      }
+      
+      console.log('User information being sent to checkout:', JSON.stringify(userInfo, null, 2));
       
       // Create checkout session
       const response = await fetch('/api/create-checkout', {

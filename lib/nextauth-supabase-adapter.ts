@@ -12,7 +12,15 @@ export function SupabaseAdapter(): Adapter {
       
       try {
         // Create user in our database
-        const newUser = await createUser({ email });
+        const newUser = await createUser({ 
+          email,
+          name: name || null,
+          // If name contains a space, try to split it into first_name and last_name
+          ...(name && name.includes(' ') ? {
+            first_name: name.split(' ')[0],
+            last_name: name.split(' ').slice(1).join(' ')
+          } : {})
+        });
         
         return {
           id: String(newUser.id),
@@ -36,11 +44,18 @@ export function SupabaseAdapter(): Adapter {
         
         if (error || !data) return null;
         
+        // Use the user's actual name if available, otherwise use first_name and last_name,
+        // and if those aren't available, fall back to the email prefix
+        const userName = data.name || 
+                        ((data.first_name || data.last_name) ? 
+                          `${data.first_name || ''} ${data.last_name || ''}`.trim() : 
+                          data.email.split('@')[0]);
+        
         return {
           id: String(data.id),
           email: data.email,
           emailVerified: null,
-          name: data.email.split('@')[0]
+          name: userName
         };
       } catch (error) {
         console.error("Error getting user:", error);
@@ -54,11 +69,18 @@ export function SupabaseAdapter(): Adapter {
         
         if (!user) return null;
         
+        // Use the user's actual name if available, otherwise use first_name and last_name,
+        // and if those aren't available, fall back to the email prefix
+        const userName = user.name || 
+                        ((user.first_name || user.last_name) ? 
+                          `${user.first_name || ''} ${user.last_name || ''}`.trim() : 
+                          user.email.split('@')[0]);
+        
         return {
           id: String(user.id),
           email: user.email,
           emailVerified: null,
-          name: user.email.split('@')[0]
+          name: userName
         };
       } catch (error) {
         console.error("Error getting user by email:", error);
@@ -89,11 +111,18 @@ export function SupabaseAdapter(): Adapter {
         
         if (error) throw error;
         
+        // Use the user's actual name if available, otherwise use first_name and last_name,
+        // and if those aren't available, fall back to the email prefix
+        const userName = data.name || 
+                        ((data.first_name || data.last_name) ? 
+                          `${data.first_name || ''} ${data.last_name || ''}`.trim() : 
+                          data.email.split('@')[0]);
+        
         return {
           id: String(data.id),
           email: data.email,
           emailVerified: null,
-          name: data.email.split('@')[0]
+          name: userName
         };
       } catch (error) {
         console.error("Error updating user:", error);

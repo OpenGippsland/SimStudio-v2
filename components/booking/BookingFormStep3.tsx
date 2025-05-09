@@ -32,7 +32,27 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
   const [coachingFee, setCoachingFee] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string>('');
   const [localIsSubmitting, setLocalIsSubmitting] = useState<boolean>(false);
+  const [hourlyRate, setHourlyRate] = useState<number>(120); // Default to 120 until fetched
   
+  // Fetch hourly rate when component mounts
+  useEffect(() => {
+    const fetchHourlyRate = async () => {
+      try {
+        const response = await fetch('/api/hourly-rate');
+        if (response.ok) {
+          const data = await response.json();
+          setHourlyRate(data.price);
+        } else {
+          console.error('Failed to fetch hourly rate');
+        }
+      } catch (error) {
+        console.error('Error fetching hourly rate:', error);
+      }
+    };
+
+    fetchHourlyRate();
+  }, []);
+
   // Fetch coach rate if a coach is selected
   useEffect(() => {
     const fetchCoachRate = async () => {
@@ -165,7 +185,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount: (creditsNeeded * 50) + (coachingFee || 0),
+          amount: (creditsNeeded * hourlyRate) + (coachingFee || 0),
           userId: formData.userId,
           isAuthenticated: true,
           description: coachingFee 
@@ -251,7 +271,9 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
             <div className="flex justify-between mb-2">
               <span className="text-gray-700">Simulator ({sessionDetails.hours} {sessionDetails.hours === 1 ? 'hour' : 'hours'})</span>
               <span className="text-gray-700">
-                {selectedUserCredits !== null ? `${sessionDetails.hours} credits` : '$' + (sessionDetails.hours * 50).toFixed(2)}
+                  {selectedUserCredits !== null ? 
+                    `${sessionDetails.hours} credits ($${(sessionDetails.hours * hourlyRate).toFixed(2)} value)` : 
+                    '$' + (sessionDetails.hours * hourlyRate).toFixed(2)}
               </span>
             </div>
             
@@ -277,12 +299,19 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
             <div className="flex justify-between font-bold">
               <span>Total</span>
               <span>
-                {selectedUserCredits !== null 
+                {selectedUserCredits !== null && selectedUserCredits >= sessionDetails.hours
                   ? `${sessionDetails.hours} credits${coachingFee ? ` + $${coachingFee.toFixed(2)}` : ''}`
-                  : `$${((sessionDetails.hours * 50) + (coachingFee || 0)).toFixed(2)}`
+                  : `$${((selectedUserCredits !== null ? (sessionDetails.hours - selectedUserCredits) : sessionDetails.hours) * hourlyRate + (coachingFee || 0)).toFixed(2)}`
                 }
               </span>
             </div>
+            
+            {/* Show monetary value of credits if using credits */}
+            {selectedUserCredits !== null && selectedUserCredits > 0 && selectedUserCredits < sessionDetails.hours && (
+              <p className="text-xs text-gray-500 mt-1 text-right">
+                (Using {Math.min(selectedUserCredits, sessionDetails.hours)} credits valued at ${(Math.min(selectedUserCredits, sessionDetails.hours) * hourlyRate).toFixed(2)})
+              </p>
+            )}
             
             
             {/* Credits and Payment Information */}
@@ -307,7 +336,7 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
                       
                       {selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours && (
                         <p className="text-sm text-black">
-                          You need {sessionDetails.hours - selectedUserCredits} more credit hours
+                          You need {sessionDetails.hours - selectedUserCredits} more credit {(sessionDetails.hours - selectedUserCredits) === 1 ? 'hour' : 'hours'} (${((sessionDetails.hours - selectedUserCredits) * hourlyRate).toFixed(2)})
                         </p>
                       )}
                       
@@ -317,7 +346,15 @@ const BookingFormStep3: React.FC<BookingFormStep3Props> = ({
                         </p>
                       )}
                       
-                      <p className="text-sm text-black">
+                      <p className="text-sm text-black font-medium mt-2">
+                        Total cost: ${(
+                          ((selectedUserCredits !== null && selectedUserCredits < sessionDetails.hours) ? 
+                            ((sessionDetails.hours - selectedUserCredits) * hourlyRate) : 0) + 
+                          (formData.wantsCoach && coachingFee && coachingFee > 0 && !formData.paidCoachingFee ? coachingFee : 0)
+                        ).toFixed(2)}
+                      </p>
+                      
+                      <p className="text-sm text-black mt-1">
                         Booking confirmed after payment
                       </p>
                     </div>

@@ -26,17 +26,34 @@ export default function SquarePaymentForm({
   const [cvv, setCvv] = useState('123');
   
   useEffect(() => {
-    // BYPASS: Skip Square SDK and use fallback for testing
-    console.log('BYPASS: Using fallback payment method for testing');
-    setSdkError('Using test payment method for development.');
+    async function initializeSquare() {
+      try {
+        setLoading(true);
+        
+        // Get the Square application ID from environment
+        const appId = process.env.NEXT_PUBLIC_SQUARE_APP_ID;
+        if (!appId) {
+          throw new Error('Square application ID not configured');
+        }
+        
+        // Load the Square SDK
+        const payments = await loadSquareSdk(appId);
+        
+        // Create a card payment form
+        const card = await payments.card();
+        await card.attach('#card-container');
+        
+        setPaymentForm(card);
+        setSdkError(null);
+      } catch (error: any) {
+        console.error('Error initializing Square SDK:', error);
+        setSdkError(`Error initializing payment form: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }
     
-    // Set up a fake payment form with the correct test token
-    setPaymentForm({
-      tokenize: async () => ({ status: 'OK', token: 'cnon:card-nonce-ok' }),
-      destroy: () => {}
-    });
-    
-    setLoading(false);
+    initializeSquare();
     
     // Cleanup on unmount
     return () => {
@@ -128,51 +145,58 @@ export default function SquarePaymentForm({
       )}
       
       <div className="mb-4">
-        {/* Always show the traditional credit card form */}
-        <div className="traditional-payment-form p-4 border border-gray-300 rounded bg-white">
-          <p className="text-gray-700 mb-2">Enter your card details:</p>
-          <div className="mb-3">
-            <label className="block text-gray-600 text-sm mb-1">Card Number</label>
-            <input 
-              type="text" 
-              placeholder="4111111111111111" 
-              className="w-full p-2 border border-gray-300 rounded"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-              maxLength={19}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-gray-600 text-sm mb-1">Expiration Date</label>
+        {sdkError ? (
+          // Show fallback form if Square SDK fails to load
+          <div className="traditional-payment-form p-4 border border-gray-300 rounded bg-white">
+            <p className="text-gray-700 mb-2">Enter your card details:</p>
+            <div className="mb-3">
+              <label className="block text-gray-600 text-sm mb-1">Card Number</label>
               <input 
                 type="text" 
-                placeholder="MM/YY" 
+                placeholder="4111111111111111" 
                 className="w-full p-2 border border-gray-300 rounded"
-                value={expirationDate}
-                onChange={(e) => setExpirationDate(e.target.value)}
-                maxLength={5}
+                value={cardNumber}
+                onChange={(e) => setCardNumber(e.target.value)}
+                maxLength={19}
               />
             </div>
-            <div>
-              <label className="block text-gray-600 text-sm mb-1">CVV</label>
-              <input 
-                type="text" 
-                placeholder="123" 
-                className="w-full p-2 border border-gray-300 rounded"
-                value={cvv}
-                onChange={(e) => setCvv(e.target.value)}
-                maxLength={4}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-gray-600 text-sm mb-1">Expiration Date</label>
+                <input 
+                  type="text" 
+                  placeholder="MM/YY" 
+                  className="w-full p-2 border border-gray-300 rounded"
+                  value={expirationDate}
+                  onChange={(e) => setExpirationDate(e.target.value)}
+                  maxLength={5}
+                />
+              </div>
+              <div>
+                <label className="block text-gray-600 text-sm mb-1">CVV</label>
+                <input 
+                  type="text" 
+                  placeholder="123" 
+                  className="w-full p-2 border border-gray-300 rounded"
+                  value={cvv}
+                  onChange={(e) => setCvv(e.target.value)}
+                  maxLength={4}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Hidden container for Square SDK */}
-        <div id="card-container" className="hidden"></div>
+        ) : (
+          // Show Square SDK form
+          <div className="square-sdk-form p-4 border border-gray-300 rounded bg-white">
+            <p className="text-gray-700 mb-2">Enter your card details:</p>
+            <div id="card-container" className="min-h-[100px] p-2 border border-gray-300 rounded"></div>
+          </div>
+        )}
         
         <p className="text-sm text-gray-500 mt-2">
-          For testing, use card number: 4111111111111111, any future expiration date, and any CVV.
+          {process.env.NEXT_PUBLIC_SQUARE_APP_ID?.includes('sandbox') 
+            ? 'For testing, use card number: 4111111111111111, any future expiration date, and any CVV.'
+            : 'Your payment information is secure and encrypted.'}
         </p>
       </div>
       

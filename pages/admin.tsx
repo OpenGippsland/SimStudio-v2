@@ -12,6 +12,7 @@ import BookingsManager from '../components/admin/BookingsManager'
 import UserManager from '../components/admin/UserManager'
 import CoachProfileManager from '../components/admin/CoachProfileManager'
 import CalendarView from '../components/admin/CalendarView'
+import HourlyRateManager from '../components/admin/HourlyRateManager'
 
 // Main Admin Page
 export default function AdminPage() {
@@ -151,6 +152,16 @@ export default function AdminPage() {
               >
                 Coach Availability
               </button>
+              <button
+                onClick={() => setActiveTab('hourly-rate')}
+                className={`py-4 px-1 font-medium text-sm border-b-2 ${
+                  activeTab === 'hourly-rate'
+                    ? 'border-simstudio-yellow text-simstudio-yellow'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Hourly Rate
+              </button>
             </nav>
           </div>
           
@@ -165,6 +176,7 @@ export default function AdminPage() {
             {activeTab === 'user-credits' && <UserCreditsManager />}
             {activeTab === 'coach-profiles' && <CoachProfileManager />}
             {activeTab === 'coach-availability' && <CoachAvailabilityForm />}
+            {activeTab === 'hourly-rate' && <HourlyRateManager isAdmin={!!user.is_admin} />}
           </div>
         </div>
       </div>

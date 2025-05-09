@@ -145,6 +145,8 @@ export const authOptions: NextAuthOptions = {
               mobile_number: credentials.mobileNumber || null
             });
             
+            console.log('User created with first_name:', credentials.firstName, 'last_name:', credentials.lastName);
+            
             console.log('User created in database:', newUser.id);
             
             // We no longer need to create users in Supabase Auth

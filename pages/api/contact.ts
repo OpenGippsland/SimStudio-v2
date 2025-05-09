@@ -94,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Prepare email content
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@simstudio.com',
-      to: process.env.CONTACT_FORM_RECIPIENT, // Where contact form submissions should go
+      to: process.env.CONTACT_FORM_RECIPIENT || 'hello@simstudio.com.au', // Fallback recipient if env var is missing
       replyTo: email,
       subject: `SimStudio Contact Form: ${subject}`,
       text: `
